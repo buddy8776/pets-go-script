@@ -1,631 +1,469 @@
 local Library = {}
-Library.__index = Library
 
 -- Services
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 
--- Optimizations
+-- Shortcuts
 local InstanceNew = Instance.new
 local UDim2New = UDim2.new
 local UDimNew = UDim.new
 local Vector2New = Vector2.new
+local Color3New = Color3.new
 local FromRGB = Color3.fromRGB
 local TableInsert = table.insert
-local StringFormat = string.format
 
--- Library Settings
+-- Library Data
 Library.Connections = {}
-Library.Threads = {}
-Library.ThemeItems = {}
-Library.ThemeMap = {}
 Library.Flags = {}
-Library.SetFlags = {}
 
-Library.Theme = {
-    Background = FromRGB(20, 20, 25),
-    Border = FromRGB(15, 15, 20),
-    Outline = FromRGB(35, 35, 40),
-    Text = FromRGB(230, 230, 235),
-    ["Text Border"] = FromRGB(0, 0, 0),
-    Accent = FromRGB(255, 170, 255),
-    TabBackground = FromRGB(25, 25, 30),
-    TabActive = FromRGB(30, 30, 35),
-    ElementBackground = FromRGB(30, 30, 35),
-    GradientTop = FromRGB(25, 25, 30),
-    GradientBottom = FromRGB(20, 20, 25)
-}
-
-Library.Tween = {
-    Time = 0.2,
-    Style = Enum.EasingStyle.Quad,
-    Direction = Enum.EasingDirection.Out
-}
-
--- Tween Module
-local Tween = {}
-Tween.__index = Tween
-
-function Tween:Create(Item, Info, Goal, IsRawItem)
-    Item = IsRawItem and Item or Item.Instance
-    Info = Info or TweenInfo.new(Library.Tween.Time, Library.Tween.Style, Library.Tween.Direction)
-
-    local NewTween = {
-        Tween = TweenService:Create(Item, Info, Goal),
-        Info = Info,
-        Goal = Goal,
-        Item = Item
-    }
-
-    NewTween.Tween:Play()
-    setmetatable(NewTween, Tween)
-    return NewTween
+-- Core Functions
+function Library:Connect(event, callback)
+    local connection = event:Connect(callback)
+    TableInsert(self.Connections, connection)
+    return connection
 end
 
--- Instances Module
-local Instances = {}
-Instances.__index = Instances
-
-function Instances:Create(Class, Properties)
-    local NewItem = {
-        Instance = InstanceNew(Class),
-        Properties = Properties,
-        Class = Class
-    }
-
-    setmetatable(NewItem, Instances)
-
-    for Property, Value in NewItem.Properties do
-        NewItem.Instance[Property] = Value
-    end
-
-    return NewItem
-end
-
-function Instances:AddToTheme(Properties)
-    if not self.Instance then return end
-    Library:AddToTheme(self, Properties)
-end
-
-function Instances:Connect(Event, Callback)
-    if not self.Instance then return end
-    if not self.Instance[Event] then return end
-    return Library:Connect(self.Instance[Event], Callback)
-end
-
-function Instances:Tween(Info, Goal)
-    if not self.Instance then return end
-    return Tween:Create(self, Info, Goal)
-end
-
-function Instances:Clean()
-    if not self.Instance then return end
-    self.Instance:Destroy()
-    self = nil
-end
-
-function Instances:MakeDraggable()
-    if not self.Instance then return end
-
-    local Gui = self.Instance
-    local Dragging = false
-    local DragStart
-    local StartPosition
-
-    self:Connect("InputBegan", function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = true
-            DragStart = Input.Position
-            StartPosition = Gui.Position
+function Library:MakeDraggable(frame, dragFrame)
+    local dragging, dragInput, dragStart, startPos
+    
+    dragFrame = dragFrame or frame
+    
+    self:Connect(dragFrame.InputBegan, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
         end
     end)
-
-    self:Connect("InputEnded", function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = false
+    
+    self:Connect(dragFrame.InputChanged, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
         end
     end)
-
-    Library:Connect(UserInputService.InputChanged, function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseMovement and Dragging then
-            local DragDelta = Input.Position - DragStart
-            Gui.Position = UDim2New(
-                StartPosition.X.Scale,
-                StartPosition.X.Offset + DragDelta.X,
-                StartPosition.Y.Scale,
-                StartPosition.Y.Offset + DragDelta.Y
+    
+    self:Connect(UserInputService.InputChanged, function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2New(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
             )
         end
     end)
-end
-
--- Core Library Functions
-function Library:Connect(Event, Callback)
-    local Connection = {
-        Connection = Event:Connect(Callback)
-    }
-    TableInsert(self.Connections, Connection)
-    return Connection
-end
-
-function Library:AddToTheme(Item, Properties)
-    Item = Item.Instance or Item
-
-    local ThemeData = {
-        Item = Item,
-        Properties = Properties,
-    }
-
-    for Property, Value in ThemeData.Properties do
-        if type(Value) == "string" then
-            Item[Property] = self.Theme[Value]
+    
+    self:Connect(UserInputService.InputEnded, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
         end
-    end
-
-    TableInsert(self.ThemeItems, ThemeData)
-    self.ThemeMap[Item] = ThemeData
+    end)
 end
-
--- Create ScreenGui
-Library.Holder = Instances:Create("ScreenGui", {
-    Parent = game:GetService("CoreGui"),
-    Name = HttpService:GenerateGUID(false),
-    ResetOnSpawn = false,
-    ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-})
 
 -- Create Window
 function Library:CreateWindow(config)
     config = config or {}
-    local windowName = config.Name or "Thugsense Menu"
-    local windowSize = config.Size or UDim2New(0, 550, 0, 650)
-
+    
     local Window = {
-        Tabs = {},
-        CurrentTab = nil
+        Tabs = {}
     }
-
-    local Items = {}
-
-    -- Main Window Frame with Gradient
-    Items["Window"] = Instances:Create("Frame", {
-        Parent = Library.Holder.Instance,
-        Size = windowSize,
-        Position = UDim2New(0.5, -windowSize.X.Offset/2, 0.5, -windowSize.Y.Offset/2),
-        BorderColor3 = FromRGB(15, 15, 20),
-        BorderSizePixel = 2,
-        BackgroundColor3 = FromRGB(20, 20, 25)
-    })
-    Items["Window"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
-    Items["Window"]:MakeDraggable()
-
-    local gradient = InstanceNew("UIGradient")
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, FromRGB(25, 25, 30)),
-        ColorSequenceKeypoint.new(1, FromRGB(20, 20, 25))
-    }
-    gradient.Parent = Items["Window"].Instance
-
-    -- Outline
-    Instances:Create("UIStroke", {
-        Parent = Items["Window"].Instance,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Miter,
-        Color = FromRGB(35, 35, 40),
-        Thickness = 2
-    }):AddToTheme({Color = "Outline"})
-
-    -- Title Bar with Gradient
-    Items["TitleBar"] = Instances:Create("Frame", {
-        Parent = Items["Window"].Instance,
-        Size = UDim2New(1, 0, 0, 30),
-        Position = UDim2New(0, 0, 0, 0),
-        BackgroundColor3 = FromRGB(25, 25, 30)
-    })
-    Items["TitleBar"]:AddToTheme({BackgroundColor3 = "TabBackground"})
-
-    local titleGradient = InstanceNew("UIGradient")
-    titleGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, FromRGB(30, 30, 35)),
-        ColorSequenceKeypoint.new(1, FromRGB(25, 25, 30))
-    }
-    titleGradient.Parent = Items["TitleBar"].Instance
-
+    
+    -- ScreenGui
+    local ScreenGui = InstanceNew("ScreenGui")
+    ScreenGui.Name = HttpService:GenerateGUID(false)
+    ScreenGui.Parent = game:GetService("CoreGui")
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Main Frame (Gray Border)
+    local MainFrame = InstanceNew("Frame")
+    MainFrame.Size = config.Size or UDim2New(0, 500, 0, 600)
+    MainFrame.Position = UDim2New(0.5, -250, 0.5, -300)
+    MainFrame.BackgroundColor3 = FromRGB(90, 90, 95)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Parent = ScreenGui
+    
+    -- Inner Frame (Black Background)
+    local InnerFrame = InstanceNew("Frame")
+    InnerFrame.Size = UDim2New(1, -6, 1, -6)
+    InnerFrame.Position = UDim2New(0, 3, 0, 3)
+    InnerFrame.BackgroundColor3 = FromRGB(15, 15, 20)
+    InnerFrame.BorderSizePixel = 0
+    InnerFrame.Parent = MainFrame
+    
+    -- Title Bar
+    local TitleBar = InstanceNew("Frame")
+    TitleBar.Size = UDim2New(1, 0, 0, 20)
+    TitleBar.BackgroundColor3 = FromRGB(25, 25, 30)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Parent = InnerFrame
+    
     -- Title Text
-    Items["Title"] = Instances:Create("TextLabel", {
-        Parent = Items["TitleBar"].Instance,
-        Text = windowName,
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
-        TextColor3 = FromRGB(230, 230, 235),
-        BackgroundTransparency = 1,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Size = UDim2New(1, -20, 1, 0),
-        Position = UDim2New(0, 10, 0, 0)
-    })
-    Items["Title"]:AddToTheme({TextColor3 = "Text"})
-
-    -- Tab Container (Horizontal)
-    Items["TabContainer"] = Instances:Create("Frame", {
-        Parent = Items["Window"].Instance,
-        Size = UDim2New(1, 0, 0, 25),
-        Position = UDim2New(0, 0, 0, 30),
-        BackgroundColor3 = FromRGB(25, 25, 30),
-        BorderSizePixel = 0
-    })
-    Items["TabContainer"]:AddToTheme({BackgroundColor3 = "TabBackground"})
-
-    Instances:Create("UIListLayout", {
-        Parent = Items["TabContainer"].Instance,
-        FillDirection = Enum.FillDirection.Horizontal,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDimNew(0, 2)
-    })
-
+    local Title = InstanceNew("TextLabel")
+    Title.Size = UDim2New(1, -10, 1, 0)
+    Title.Position = UDim2New(0, 5, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = config.Name or "Thugsense Menu"
+    Title.TextColor3 = FromRGB(200, 200, 200)
+    Title.TextSize = 13
+    Title.Font = Enum.Font.SourceSans
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = TitleBar
+    
+    -- Tab Container
+    local TabContainer = InstanceNew("Frame")
+    TabContainer.Size = UDim2New(1, 0, 0, 18)
+    TabContainer.Position = UDim2New(0, 0, 0, 20)
+    TabContainer.BackgroundColor3 = FromRGB(20, 20, 25)
+    TabContainer.BorderSizePixel = 0
+    TabContainer.Parent = InnerFrame
+    
+    local TabLayout = InstanceNew("UIListLayout")
+    TabLayout.FillDirection = Enum.FillDirection.Horizontal
+    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabLayout.Parent = TabContainer
+    
     -- Content Container
-    Items["ContentContainer"] = Instances:Create("Frame", {
-        Parent = Items["Window"].Instance,
-        Size = UDim2New(1, -10, 1, -60),
-        Position = UDim2New(0, 5, 0, 55),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0
-    })
-
-    function Window:CreateTab(tabName)
-        local Tab = {
-            Name = tabName,
-            Elements = {}
-        }
-
-        local TabItems = {}
-
-        -- Tab Button with Gradient
-        TabItems["Button"] = Instances:Create("TextButton", {
-            Parent = Items["TabContainer"].Instance,
-            Size = UDim2New(0, 90, 1, 0),
-            BackgroundColor3 = FromRGB(25, 25, 30),
-            BorderSizePixel = 0,
-            Text = tabName,
-            Font = Enum.Font.Gotham,
-            TextSize = 13,
-            TextColor3 = FromRGB(180, 180, 185),
-            AutoButtonColor = false
-        })
-
-        local tabGradient = InstanceNew("UIGradient")
-        tabGradient.Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, FromRGB(30, 30, 35)),
-            ColorSequenceKeypoint.new(1, FromRGB(25, 25, 30))
-        }
-        tabGradient.Parent = TabItems["Button"].Instance
-
-        -- Tab Content (ScrollingFrame)
-        TabItems["Content"] = Instances:Create("ScrollingFrame", {
-            Parent = Items["ContentContainer"].Instance,
-            Size = UDim2New(1, 0, 1, 0),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            ScrollBarThickness = 4,
-            ScrollBarImageColor3 = FromRGB(50, 50, 55),
-            CanvasSize = UDim2New(0, 0, 0, 0),
-            Visible = false
-        })
-
-        Instances:Create("UIListLayout", {
-            Parent = TabItems["Content"].Instance,
-            Padding = UDimNew(0, 8),
-            SortOrder = Enum.SortOrder.LayoutOrder
-        })
-
-        Instances:Create("UIPadding", {
-            Parent = TabItems["Content"].Instance,
-            PaddingTop = UDimNew(0, 8),
-            PaddingLeft = UDimNew(0, 8),
-            PaddingRight = UDimNew(0, 8),
-            PaddingBottom = UDimNew(0, 8)
-        })
-
-        -- Auto resize canvas
-        TabItems["Content"].Instance:GetPropertyChangedSignal("AbsoluteCanvasSize"):Connect(function()
-            TabItems["Content"].Instance.CanvasSize = UDim2New(0, 0, 0, TabItems["Content"].Instance.UIListLayout.AbsoluteContentSize.Y + 16)
+    local ContentContainer = InstanceNew("Frame")
+    ContentContainer.Size = UDim2New(1, 0, 1, -38)
+    ContentContainer.Position = UDim2New(0, 0, 0, 38)
+    ContentContainer.BackgroundColor3 = FromRGB(8, 8, 13)
+    ContentContainer.BorderSizePixel = 0
+    ContentContainer.Parent = InnerFrame
+    
+    Library:MakeDraggable(MainFrame, TitleBar)
+    
+    function Window:CreateTab(name)
+        local Tab = {}
+        
+        -- Tab Button
+        local TabButton = InstanceNew("TextButton")
+        TabButton.Size = UDim2New(0, 80, 1, 0)
+        TabButton.BackgroundColor3 = FromRGB(20, 20, 25)
+        TabButton.BorderSizePixel = 0
+        TabButton.Text = name
+        TabButton.TextColor3 = FromRGB(150, 150, 150)
+        TabButton.TextSize = 12
+        TabButton.Font = Enum.Font.SourceSans
+        TabButton.AutoButtonColor = false
+        TabButton.Parent = TabContainer
+        
+        -- Tab Content
+        local TabContent = InstanceNew("ScrollingFrame")
+        TabContent.Size = UDim2New(1, 0, 1, 0)
+        TabContent.BackgroundTransparency = 1
+        TabContent.BorderSizePixel = 0
+        TabContent.ScrollBarThickness = 3
+        TabContent.ScrollBarImageColor3 = FromRGB(50, 50, 55)
+        TabContent.CanvasSize = UDim2New(0, 0, 0, 0)
+        TabContent.Visible = false
+        TabContent.Parent = ContentContainer
+        
+        local TabLayout = InstanceNew("UIListLayout")
+        TabLayout.Padding = UDimNew(0, 5)
+        TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        TabLayout.Parent = TabContent
+        
+        local TabPadding = InstanceNew("UIPadding")
+        TabPadding.PaddingTop = UDimNew(0, 8)
+        TabPadding.PaddingLeft = UDimNew(0, 8)
+        TabPadding.PaddingRight = UDimNew(0, 8)
+        TabPadding.Parent = TabContent
+        
+        -- Auto resize
+        Library:Connect(TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+            TabContent.CanvasSize = UDim2New(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 16)
         end)
-
-        -- Tab Button Click
-        TabItems["Button"]:Connect("MouseButton1Click", function()
+        
+        -- Tab selection
+        Library:Connect(TabButton.MouseButton1Click, function()
             for _, tab in pairs(Window.Tabs) do
-                tab.Content.Instance.Visible = false
-                tab.Button:Tween(nil, {BackgroundColor3 = FromRGB(25, 25, 30), TextColor3 = FromRGB(180, 180, 185)})
+                tab.Content.Visible = false
+                tab.Button.BackgroundColor3 = FromRGB(20, 20, 25)
+                tab.Button.TextColor3 = FromRGB(150, 150, 150)
             end
-
-            TabItems["Content"].Instance.Visible = true
-            TabItems["Button"]:Tween(nil, {BackgroundColor3 = FromRGB(30, 30, 35), TextColor3 = FromRGB(230, 230, 235)})
-            Window.CurrentTab = Tab
+            
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = FromRGB(25, 25, 30)
+            TabButton.TextColor3 = FromRGB(200, 200, 200)
         end)
-
-        Tab.Button = TabItems["Button"]
-        Tab.Content = TabItems["Content"]
-
-        TableInsert(Window.Tabs, Tab)
-
+        
         -- Select first tab
-        if #Window.Tabs == 1 then
-            TabItems["Button"].Instance.BackgroundColor3 = FromRGB(30, 30, 35)
-            TabItems["Button"].Instance.TextColor3 = FromRGB(230, 230, 235)
-            TabItems["Content"].Instance.Visible = true
-            Window.CurrentTab = Tab
+        if #Window.Tabs == 0 then
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = FromRGB(25, 25, 30)
+            TabButton.TextColor3 = FromRGB(200, 200, 200)
         end
-
+        
+        Tab.Button = TabButton
+        Tab.Content = TabContent
+        TableInsert(Window.Tabs, Tab)
+        
         function Tab:CreateButton(config)
             config = config or {}
-            local btnText = config.Name or "Button"
-            local callback = config.Callback or function() end
-
-            local button = Instances:Create("TextButton", {
-                Parent = TabItems["Content"].Instance,
-                Size = UDim2New(1, -16, 0, 30),
-                BackgroundColor3 = FromRGB(30, 30, 35),
-                BorderColor3 = FromRGB(15, 15, 20),
-                BorderSizePixel = 1,
-                Text = btnText,
-                Font = Enum.Font.Gotham,
-                TextSize = 13,
-                TextColor3 = FromRGB(230, 230, 235),
-                TextXAlignment = Enum.TextXAlignment.Left,
-                AutoButtonColor = false
-            })
-            button:AddToTheme({BackgroundColor3 = "ElementBackground"})
-
-            Instances:Create("UIPadding", {
-                Parent = button.Instance,
-                PaddingLeft = UDimNew(0, 10)
-            })
-
-            button:Connect("MouseButton1Click", function()
-                callback()
+            
+            local Button = InstanceNew("TextButton")
+            Button.Size = UDim2New(1, -8, 0, 20)
+            Button.BackgroundColor3 = FromRGB(22, 22, 27)
+            Button.BorderColor3 = FromRGB(35, 35, 40)
+            Button.BorderSizePixel = 1
+            Button.Text = config.Name or "Button"
+            Button.TextColor3 = FromRGB(200, 200, 200)
+            Button.TextSize = 12
+            Button.Font = Enum.Font.SourceSans
+            Button.AutoButtonColor = false
+            Button.Parent = TabContent
+            
+            if config.Callback then
+                Library:Connect(Button.MouseButton1Click, config.Callback)
+            end
+            
+            Library:Connect(Button.MouseEnter, function()
+                Button.BackgroundColor3 = FromRGB(28, 28, 33)
             end)
-
-            button:Connect("MouseEnter", function()
-                button:Tween(nil, {BackgroundColor3 = FromRGB(35, 35, 40)})
+            
+            Library:Connect(Button.MouseLeave, function()
+                Button.BackgroundColor3 = FromRGB(22, 22, 27)
             end)
-
-            button:Connect("MouseLeave", function()
-                button:Tween(nil, {BackgroundColor3 = FromRGB(30, 30, 35)})
-            end)
-
-            return button
+            
+            return Button
         end
-
+        
         function Tab:CreateToggle(config)
             config = config or {}
-            local toggleText = config.Name or "Toggle"
-            local default = config.Default or false
-            local callback = config.Callback or function() end
-
-            local toggleFrame = Instances:Create("Frame", {
-                Parent = TabItems["Content"].Instance,
-                Size = UDim2New(1, -16, 0, 30),
-                BackgroundColor3 = FromRGB(30, 30, 35),
-                BorderColor3 = FromRGB(15, 15, 20),
-                BorderSizePixel = 1
-            })
-            toggleFrame:AddToTheme({BackgroundColor3 = "ElementBackground"})
-
-            local label = Instances:Create("TextLabel", {
-                Parent = toggleFrame.Instance,
-                Size = UDim2New(1, -35, 1, 0),
-                Position = UDim2New(0, 10, 0, 0),
-                BackgroundTransparency = 1,
-                Text = toggleText,
-                Font = Enum.Font.Gotham,
-                TextSize = 13,
-                TextColor3 = FromRGB(230, 230, 235),
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-            label:AddToTheme({TextColor3 = "Text"})
-
-            local checkbox = Instances:Create("TextButton", {
-                Parent = toggleFrame.Instance,
-                Size = UDim2New(0, 15, 0, 15),
-                Position = UDim2New(1, -25, 0.5, -7.5),
-                BackgroundColor3 = default and FromRGB(100, 200, 100) or FromRGB(50, 50, 55),
-                BorderColor3 = FromRGB(15, 15, 20),
-                BorderSizePixel = 1,
-                Text = "",
-                AutoButtonColor = false
-            })
-
-            local toggled = default
-
-            checkbox:Connect("MouseButton1Click", function()
+            
+            local ToggleFrame = InstanceNew("Frame")
+            ToggleFrame.Size = UDim2New(1, -8, 0, 20)
+            ToggleFrame.BackgroundColor3 = FromRGB(22, 22, 27)
+            ToggleFrame.BorderColor3 = FromRGB(35, 35, 40)
+            ToggleFrame.BorderSizePixel = 1
+            ToggleFrame.Parent = TabContent
+            
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -25, 1, 0)
+            Label.Position = UDim2New(0, 5, 0, 0)
+            Label.BackgroundTransparency = 1
+            Label.Text = config.Name or "Toggle"
+            Label.TextColor3 = FromRGB(200, 200, 200)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = ToggleFrame
+            
+            local Checkbox = InstanceNew("TextButton")
+            Checkbox.Size = UDim2New(0, 10, 0, 10)
+            Checkbox.Position = UDim2New(1, -15, 0.5, -5)
+            Checkbox.BackgroundColor3 = config.Default and FromRGB(80, 180, 80) or FromRGB(45, 45, 50)
+            Checkbox.BorderColor3 = FromRGB(35, 35, 40)
+            Checkbox.BorderSizePixel = 1
+            Checkbox.Text = ""
+            Checkbox.AutoButtonColor = false
+            Checkbox.Parent = ToggleFrame
+            
+            local toggled = config.Default or false
+            
+            if config.Flag then
+                Library.Flags[config.Flag] = toggled
+            end
+            
+            Library:Connect(Checkbox.MouseButton1Click, function()
                 toggled = not toggled
-                checkbox:Tween(nil, {BackgroundColor3 = toggled and FromRGB(100, 200, 100) or FromRGB(50, 50, 55)})
-                callback(toggled)
+                Checkbox.BackgroundColor3 = toggled and FromRGB(80, 180, 80) or FromRGB(45, 45, 50)
+                
+                if config.Flag then
+                    Library.Flags[config.Flag] = toggled
+                end
+                
+                if config.Callback then
+                    config.Callback(toggled)
+                end
             end)
-
-            return toggleFrame
+            
+            return ToggleFrame
         end
-
+        
         function Tab:CreateSlider(config)
             config = config or {}
-            local sliderText = config.Name or "Slider"
             local min = config.Min or 0
             local max = config.Max or 100
             local default = config.Default or min
-            local callback = config.Callback or function() end
-
-            local sliderFrame = Instances:Create("Frame", {
-                Parent = TabItems["Content"].Instance,
-                Size = UDim2New(1, -16, 0, 50),
-                BackgroundColor3 = FromRGB(30, 30, 35),
-                BorderColor3 = FromRGB(15, 15, 20),
-                BorderSizePixel = 1
-            })
-            sliderFrame:AddToTheme({BackgroundColor3 = "ElementBackground"})
-
-            local label = Instances:Create("TextLabel", {
-                Parent = sliderFrame.Instance,
-                Size = UDim2New(1, -60, 0, 15),
-                Position = UDim2New(0, 10, 0, 5),
-                BackgroundTransparency = 1,
-                Text = sliderText,
-                Font = Enum.Font.Gotham,
-                TextSize = 13,
-                TextColor3 = FromRGB(230, 230, 235),
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-            label:AddToTheme({TextColor3 = "Text"})
-
-            local valueLabel = Instances:Create("TextLabel", {
-                Parent = sliderFrame.Instance,
-                Size = UDim2New(0, 50, 0, 15),
-                Position = UDim2New(1, -60, 0, 5),
-                BackgroundTransparency = 1,
-                Text = tostring(default),
-                Font = Enum.Font.Gotham,
-                TextSize = 13,
-                TextColor3 = FromRGB(180, 180, 185),
-                TextXAlignment = Enum.TextXAlignment.Right
-            })
-
-            local sliderBar = Instances:Create("Frame", {
-                Parent = sliderFrame.Instance,
-                Size = UDim2New(1, -20, 0, 6),
-                Position = UDim2New(0, 10, 0, 25),
-                BackgroundColor3 = FromRGB(40, 40, 45),
-                BorderSizePixel = 0
-            })
-
-            local sliderFill = Instances:Create("Frame", {
-                Parent = sliderBar.Instance,
-                Size = UDim2New((default - min) / (max - min), 0, 1, 0),
-                BackgroundColor3 = Library.Theme.Accent,
-                BorderSizePixel = 0
-            })
-            sliderFill:AddToTheme({BackgroundColor3 = "Accent"})
-
-            local sliderBtn = Instances:Create("TextButton", {
-                Parent = sliderBar.Instance,
-                Size = UDim2New(0, 10, 1, 6),
-                Position = UDim2New((default - min) / (max - min), -5, 0, -3),
-                BackgroundColor3 = FromRGB(255, 170, 255),
-                BorderSizePixel = 0,
-                Text = "",
-                AutoButtonColor = false
-            })
-            sliderBtn:AddToTheme({BackgroundColor3 = "Accent"})
-
+            
+            local SliderFrame = InstanceNew("Frame")
+            SliderFrame.Size = UDim2New(1, -8, 0, 35)
+            SliderFrame.BackgroundColor3 = FromRGB(22, 22, 27)
+            SliderFrame.BorderColor3 = FromRGB(35, 35, 40)
+            SliderFrame.BorderSizePixel = 1
+            SliderFrame.Parent = TabContent
+            
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -50, 0, 15)
+            Label.Position = UDim2New(0, 5, 0, 3)
+            Label.BackgroundTransparency = 1
+            Label.Text = config.Name or "Slider"
+            Label.TextColor3 = FromRGB(200, 200, 200)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = SliderFrame
+            
+            local ValueLabel = InstanceNew("TextLabel")
+            ValueLabel.Size = UDim2New(0, 40, 0, 15)
+            ValueLabel.Position = UDim2New(1, -45, 0, 3)
+            ValueLabel.BackgroundTransparency = 1
+            ValueLabel.Text = tostring(default)
+            ValueLabel.TextColor3 = FromRGB(160, 160, 160)
+            ValueLabel.TextSize = 12
+            ValueLabel.Font = Enum.Font.SourceSans
+            ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+            ValueLabel.Parent = SliderFrame
+            
+            local SliderBar = InstanceNew("Frame")
+            SliderBar.Size = UDim2New(1, -10, 0, 4)
+            SliderBar.Position = UDim2New(0, 5, 1, -10)
+            SliderBar.BackgroundColor3 = FromRGB(35, 35, 40)
+            SliderBar.BorderSizePixel = 0
+            SliderBar.Parent = SliderFrame
+            
+            local SliderFill = InstanceNew("Frame")
+            SliderFill.Size = UDim2New((default - min) / (max - min), 0, 1, 0)
+            SliderFill.BackgroundColor3 = FromRGB(120, 80, 190)
+            SliderFill.BorderSizePixel = 0
+            SliderFill.Parent = SliderBar
+            
+            local SliderButton = InstanceNew("TextButton")
+            SliderButton.Size = UDim2New(1, 0, 1, 0)
+            SliderButton.BackgroundTransparency = 1
+            SliderButton.Text = ""
+            SliderButton.Parent = SliderBar
+            
             local dragging = false
-
-            sliderBtn:Connect("InputBegan", function(input)
+            
+            if config.Flag then
+                Library.Flags[config.Flag] = default
+            end
+            
+            local function updateSlider(input)
+                local pos = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+                local value = math.floor(min + (max - min) * pos)
+                
+                SliderFill.Size = UDim2New(pos, 0, 1, 0)
+                ValueLabel.Text = tostring(value)
+                
+                if config.Flag then
+                    Library.Flags[config.Flag] = value
+                end
+                
+                if config.Callback then
+                    config.Callback(value)
+                end
+            end
+            
+            Library:Connect(SliderButton.InputBegan, function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = true
+                    updateSlider(input)
                 end
             end)
-
+            
             Library:Connect(UserInputService.InputEnded, function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
                 end
             end)
-
+            
             Library:Connect(UserInputService.InputChanged, function(input)
                 if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    local pos = math.clamp((input.Position.X - sliderBar.Instance.AbsolutePosition.X) / sliderBar.Instance.AbsoluteSize.X, 0, 1)
-                    local value = math.floor(min + (max - min) * pos)
-
-                    sliderFill.Instance.Size = UDim2New(pos, 0, 1, 0)
-                    sliderBtn.Instance.Position = UDim2New(pos, -5, 0, -3)
-                    valueLabel.Instance.Text = tostring(value)
-                    callback(value)
+                    updateSlider(input)
                 end
             end)
-
-            return sliderFrame
+            
+            return SliderFrame
         end
-
+        
         function Tab:CreateTextbox(config)
             config = config or {}
-            local boxText = config.Name or "Textbox"
-            local placeholder = config.Placeholder or ""
-            local callback = config.Callback or function() end
-
-            local boxFrame = Instances:Create("Frame", {
-                Parent = TabItems["Content"].Instance,
-                Size = UDim2New(1, -16, 0, 50),
-                BackgroundColor3 = FromRGB(30, 30, 35),
-                BorderColor3 = FromRGB(15, 15, 20),
-                BorderSizePixel = 1
-            })
-            boxFrame:AddToTheme({BackgroundColor3 = "ElementBackground"})
-
-            local label = Instances:Create("TextLabel", {
-                Parent = boxFrame.Instance,
-                Size = UDim2New(1, -20, 0, 15),
-                Position = UDim2New(0, 10, 0, 5),
-                BackgroundTransparency = 1,
-                Text = boxText,
-                Font = Enum.Font.Gotham,
-                TextSize = 13,
-                TextColor3 = FromRGB(230, 230, 235),
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-            label:AddToTheme({TextColor3 = "Text"})
-
-            local textbox = Instances:Create("TextBox", {
-                Parent = boxFrame.Instance,
-                Size = UDim2New(1, -20, 0, 20),
-                Position = UDim2New(0, 10, 0, 25),
-                BackgroundColor3 = FromRGB(25, 25, 30),
-                BorderColor3 = FromRGB(15, 15, 20),
-                BorderSizePixel = 1,
-                Text = "",
-                PlaceholderText = placeholder,
-                Font = Enum.Font.Gotham,
-                TextSize = 12,
-                TextColor3 = FromRGB(230, 230, 235),
-                TextXAlignment = Enum.TextXAlignment.Left,
-                ClearTextOnFocus = false
-            })
-
-            Instances:Create("UIPadding", {
-                Parent = textbox.Instance,
-                PaddingLeft = UDimNew(0, 5)
-            })
-
-            textbox:Connect("FocusLost", function(enter)
+            
+            local TextboxFrame = InstanceNew("Frame")
+            TextboxFrame.Size = UDim2New(1, -8, 0, 38)
+            TextboxFrame.BackgroundColor3 = FromRGB(22, 22, 27)
+            TextboxFrame.BorderColor3 = FromRGB(35, 35, 40)
+            TextboxFrame.BorderSizePixel = 1
+            TextboxFrame.Parent = TabContent
+            
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -10, 0, 15)
+            Label.Position = UDim2New(0, 5, 0, 3)
+            Label.BackgroundTransparency = 1
+            Label.Text = config.Name or "Textbox"
+            Label.TextColor3 = FromRGB(200, 200, 200)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = TextboxFrame
+            
+            local Textbox = InstanceNew("TextBox")
+            Textbox.Size = UDim2New(1, -10, 0, 16)
+            Textbox.Position = UDim2New(0, 5, 0, 18)
+            Textbox.BackgroundColor3 = FromRGB(15, 15, 20)
+            Textbox.BorderColor3 = FromRGB(30, 30, 35)
+            Textbox.BorderSizePixel = 1
+            Textbox.Text = ""
+            Textbox.PlaceholderText = config.Placeholder or ""
+            Textbox.TextColor3 = FromRGB(200, 200, 200)
+            Textbox.PlaceholderColor3 = FromRGB(100, 100, 105)
+            Textbox.TextSize = 11
+            Textbox.Font = Enum.Font.SourceSans
+            Textbox.TextXAlignment = Enum.TextXAlignment.Left
+            Textbox.ClearTextOnFocus = false
+            Textbox.Parent = TextboxFrame
+            
+            local TextboxPadding = InstanceNew("UIPadding")
+            TextboxPadding.PaddingLeft = UDimNew(0, 3)
+            TextboxPadding.Parent = Textbox
+            
+            if config.Flag then
+                Library.Flags[config.Flag] = ""
+            end
+            
+            Library:Connect(Textbox.FocusLost, function(enter)
                 if enter then
-                    callback(textbox.Instance.Text)
+                    if config.Flag then
+                        Library.Flags[config.Flag] = Textbox.Text
+                    end
+                    
+                    if config.Callback then
+                        config.Callback(Textbox.Text)
+                    end
                 end
             end)
-
-            return boxFrame
+            
+            return TextboxFrame
         end
-
+        
         function Tab:CreateLabel(text)
-            local label = Instances:Create("TextLabel", {
-                Parent = TabItems["Content"].Instance,
-                Size = UDim2New(1, -16, 0, 25),
-                BackgroundTransparency = 1,
-                Text = text,
-                Font = Enum.Font.Gotham,
-                TextSize = 13,
-                TextColor3 = FromRGB(230, 230, 235),
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-            label:AddToTheme({TextColor3 = "Text"})
-
-            Instances:Create("UIPadding", {
-                Parent = label.Instance,
-                PaddingLeft = UDimNew(0, 10)
-            })
-
-            return label
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -8, 0, 18)
+            Label.BackgroundTransparency = 1
+            Label.Text = text or "Label"
+            Label.TextColor3 = FromRGB(180, 180, 180)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = TabContent
+            
+            local LabelPadding = InstanceNew("UIPadding")
+            LabelPadding.PaddingLeft = UDimNew(0, 5)
+            LabelPadding.Parent = Label
+            
+            return Label
         end
-
+        
         return Tab
     end
-
+    
     return Window
 end
 
