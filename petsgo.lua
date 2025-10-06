@@ -1,24 +1,21 @@
 local Library = {}
 
--- Services
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 
--- Shortcuts
 local InstanceNew = Instance.new
 local UDim2New = UDim2.new
 local UDimNew = UDim.new
 local Vector2New = Vector2.new
-local Color3New = Color3.new
 local FromRGB = Color3.fromRGB
+local FromHSV = Color3.fromHSV
 local TableInsert = table.insert
 
--- Library Data
 Library.Connections = {}
 Library.Flags = {}
+Library.SetFlags = {}
 
--- Core Functions
 function Library:Connect(event, callback)
     local connection = event:Connect(callback)
     TableInsert(self.Connections, connection)
@@ -27,7 +24,6 @@ end
 
 function Library:MakeDraggable(frame, dragFrame)
     local dragging, dragInput, dragStart, startPos
-    
     dragFrame = dragFrame or frame
     
     self:Connect(dragFrame.InputBegan, function(input)
@@ -63,57 +59,51 @@ function Library:MakeDraggable(frame, dragFrame)
     end)
 end
 
--- Create Window
 function Library:CreateWindow(config)
     config = config or {}
     
     local Window = {
-        Tabs = {}
+        Tabs = {},
+        Name = config.Name or "Window"
     }
     
-    -- ScreenGui
     local ScreenGui = InstanceNew("ScreenGui")
     ScreenGui.Name = HttpService:GenerateGUID(false)
     ScreenGui.Parent = game:GetService("CoreGui")
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    -- Main Frame (Gray Border)
-    local MainFrame = InstanceNew("Frame")
-    MainFrame.Size = config.Size or UDim2New(0, 500, 0, 600)
-    MainFrame.Position = UDim2New(0.5, -250, 0.5, -300)
-    MainFrame.BackgroundColor3 = FromRGB(90, 90, 95)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Parent = ScreenGui
+    local OuterBorder = InstanceNew("Frame")
+    OuterBorder.Size = config.Size or UDim2New(0, 506, 0, 606)
+    OuterBorder.Position = UDim2New(0.5, -253, 0.5, -303)
+    OuterBorder.BackgroundColor3 = FromRGB(90, 90, 95)
+    OuterBorder.BorderSizePixel = 0
+    OuterBorder.Parent = ScreenGui
     
-    -- Inner Frame (Black Background)
     local InnerFrame = InstanceNew("Frame")
     InnerFrame.Size = UDim2New(1, -6, 1, -6)
     InnerFrame.Position = UDim2New(0, 3, 0, 3)
     InnerFrame.BackgroundColor3 = FromRGB(15, 15, 20)
     InnerFrame.BorderSizePixel = 0
-    InnerFrame.Parent = MainFrame
+    InnerFrame.Parent = OuterBorder
     
-    -- Title Bar
     local TitleBar = InstanceNew("Frame")
     TitleBar.Size = UDim2New(1, 0, 0, 20)
     TitleBar.BackgroundColor3 = FromRGB(25, 25, 30)
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = InnerFrame
     
-    -- Title Text
     local Title = InstanceNew("TextLabel")
     Title.Size = UDim2New(1, -10, 1, 0)
     Title.Position = UDim2New(0, 5, 0, 0)
     Title.BackgroundTransparency = 1
-    Title.Text = config.Name or "Thugsense Menu"
+    Title.Text = Window.Name
     Title.TextColor3 = FromRGB(200, 200, 200)
     Title.TextSize = 13
     Title.Font = Enum.Font.SourceSans
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = TitleBar
     
-    -- Tab Container
     local TabContainer = InstanceNew("Frame")
     TabContainer.Size = UDim2New(1, 0, 0, 18)
     TabContainer.Position = UDim2New(0, 0, 0, 20)
@@ -126,7 +116,6 @@ function Library:CreateWindow(config)
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabLayout.Parent = TabContainer
     
-    -- Content Container
     local ContentContainer = InstanceNew("Frame")
     ContentContainer.Size = UDim2New(1, 0, 1, -38)
     ContentContainer.Position = UDim2New(0, 0, 0, 38)
@@ -134,12 +123,11 @@ function Library:CreateWindow(config)
     ContentContainer.BorderSizePixel = 0
     ContentContainer.Parent = InnerFrame
     
-    Library:MakeDraggable(MainFrame, TitleBar)
+    Library:MakeDraggable(OuterBorder, TitleBar)
     
     function Window:CreateTab(name)
         local Tab = {}
         
-        -- Tab Button
         local TabButton = InstanceNew("TextButton")
         TabButton.Size = UDim2New(0, 80, 1, 0)
         TabButton.BackgroundColor3 = FromRGB(20, 20, 25)
@@ -151,7 +139,6 @@ function Library:CreateWindow(config)
         TabButton.AutoButtonColor = false
         TabButton.Parent = TabContainer
         
-        -- Tab Content
         local TabContent = InstanceNew("ScrollingFrame")
         TabContent.Size = UDim2New(1, 0, 1, 0)
         TabContent.BackgroundTransparency = 1
@@ -173,12 +160,10 @@ function Library:CreateWindow(config)
         TabPadding.PaddingRight = UDimNew(0, 8)
         TabPadding.Parent = TabContent
         
-        -- Auto resize
         Library:Connect(TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
             TabContent.CanvasSize = UDim2New(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 16)
         end)
         
-        -- Tab selection
         Library:Connect(TabButton.MouseButton1Click, function()
             for _, tab in pairs(Window.Tabs) do
                 tab.Content.Visible = false
@@ -191,7 +176,6 @@ function Library:CreateWindow(config)
             TabButton.TextColor3 = FromRGB(200, 200, 200)
         end)
         
-        -- Select first tab
         if #Window.Tabs == 0 then
             TabContent.Visible = true
             TabButton.BackgroundColor3 = FromRGB(25, 25, 30)
@@ -383,87 +367,9 @@ function Library:CreateWindow(config)
             return SliderFrame
         end
         
-        function Tab:CreateTextbox(config)
-            config = config or {}
-            
-            local TextboxFrame = InstanceNew("Frame")
-            TextboxFrame.Size = UDim2New(1, -8, 0, 38)
-            TextboxFrame.BackgroundColor3 = FromRGB(22, 22, 27)
-            TextboxFrame.BorderColor3 = FromRGB(35, 35, 40)
-            TextboxFrame.BorderSizePixel = 1
-            TextboxFrame.Parent = TabContent
-            
-            local Label = InstanceNew("TextLabel")
-            Label.Size = UDim2New(1, -10, 0, 15)
-            Label.Position = UDim2New(0, 5, 0, 3)
-            Label.BackgroundTransparency = 1
-            Label.Text = config.Name or "Textbox"
-            Label.TextColor3 = FromRGB(200, 200, 200)
-            Label.TextSize = 12
-            Label.Font = Enum.Font.SourceSans
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.Parent = TextboxFrame
-            
-            local Textbox = InstanceNew("TextBox")
-            Textbox.Size = UDim2New(1, -10, 0, 16)
-            Textbox.Position = UDim2New(0, 5, 0, 18)
-            Textbox.BackgroundColor3 = FromRGB(15, 15, 20)
-            Textbox.BorderColor3 = FromRGB(30, 30, 35)
-            Textbox.BorderSizePixel = 1
-            Textbox.Text = ""
-            Textbox.PlaceholderText = config.Placeholder or ""
-            Textbox.TextColor3 = FromRGB(200, 200, 200)
-            Textbox.PlaceholderColor3 = FromRGB(100, 100, 105)
-            Textbox.TextSize = 11
-            Textbox.Font = Enum.Font.SourceSans
-            Textbox.TextXAlignment = Enum.TextXAlignment.Left
-            Textbox.ClearTextOnFocus = false
-            Textbox.Parent = TextboxFrame
-            
-            local TextboxPadding = InstanceNew("UIPadding")
-            TextboxPadding.PaddingLeft = UDimNew(0, 3)
-            TextboxPadding.Parent = Textbox
-            
-            if config.Flag then
-                Library.Flags[config.Flag] = ""
-            end
-            
-            Library:Connect(Textbox.FocusLost, function(enter)
-                if enter then
-                    if config.Flag then
-                        Library.Flags[config.Flag] = Textbox.Text
-                    end
-                    
-                    if config.Callback then
-                        config.Callback(Textbox.Text)
-                    end
-                end
-            end)
-            
-            return TextboxFrame
-        end
-        
-        function Tab:CreateLabel(text)
-            local Label = InstanceNew("TextLabel")
-            Label.Size = UDim2New(1, -8, 0, 18)
-            Label.BackgroundTransparency = 1
-            Label.Text = text or "Label"
-            Label.TextColor3 = FromRGB(180, 180, 180)
-            Label.TextSize = 12
-            Label.Font = Enum.Font.SourceSans
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.Parent = TabContent
-            
-            local LabelPadding = InstanceNew("UIPadding")
-            LabelPadding.PaddingLeft = UDimNew(0, 5)
-            LabelPadding.Parent = Label
-            
-            return Label
-        end
-        
         function Tab:CreateDropdown(config)
             config = config or {}
-            local options = config.Options or {"Option 1", "Option 2", "Option 3"}
+            local options = config.Options or {"Option 1", "Option 2"}
             local default = config.Default or options[1]
             
             local Dropdown = {
@@ -531,12 +437,12 @@ function Library:CreateWindow(config)
                 Library.Flags[config.Flag] = default
             end
             
-            local function createOption(optionText)
+            for _, option in pairs(options) do
                 local OptionButton = InstanceNew("TextButton")
                 OptionButton.Size = UDim2New(1, 0, 0, 18)
                 OptionButton.BackgroundColor3 = FromRGB(18, 18, 23)
                 OptionButton.BorderSizePixel = 0
-                OptionButton.Text = "  " .. optionText
+                OptionButton.Text = "  " .. option
                 OptionButton.TextColor3 = FromRGB(200, 200, 200)
                 OptionButton.TextSize = 11
                 OptionButton.Font = Enum.Font.SourceSans
@@ -553,25 +459,21 @@ function Library:CreateWindow(config)
                 end)
                 
                 Library:Connect(OptionButton.MouseButton1Click, function()
-                    Dropdown.Value = optionText
-                    DropdownButton.Text = "  " .. optionText
+                    Dropdown.Value = option
+                    DropdownButton.Text = "  " .. option
                     Dropdown.IsOpen = false
                     
                     DropdownFrame.Size = UDim2New(1, -8, 0, 38)
                     OptionsList.Size = UDim2New(1, -10, 0, 0)
                     
                     if config.Flag then
-                        Library.Flags[config.Flag] = optionText
+                        Library.Flags[config.Flag] = option
                     end
                     
                     if config.Callback then
-                        config.Callback(optionText)
+                        config.Callback(option)
                     end
                 end)
-            end
-            
-            for _, option in pairs(options) do
-                createOption(option)
             end
             
             Library:Connect(DropdownButton.MouseButton1Click, function()
@@ -603,7 +505,6 @@ function Library:CreateWindow(config)
                 IsOpen = false
             }
             
-            -- Convert default color to HSV
             local h, s, v = default:ToHSV()
             Colorpicker.Hue = h
             Colorpicker.Sat = s
@@ -637,7 +538,6 @@ function Library:CreateWindow(config)
             ColorButton.AutoButtonColor = false
             ColorButton.Parent = ColorFrame
             
-            -- Color Picker Window
             local PickerWindow = InstanceNew("Frame")
             PickerWindow.Size = UDim2New(0, 180, 0, 200)
             PickerWindow.Position = UDim2New(0.5, -90, 0.5, -100)
@@ -661,7 +561,6 @@ function Library:CreateWindow(config)
             PickerTitle.TextXAlignment = Enum.TextXAlignment.Left
             PickerTitle.Parent = PickerWindow
             
-            -- Saturation/Value Picker
             local SVPicker = InstanceNew("TextButton")
             SVPicker.Size = UDim2New(1, -30, 1, -50)
             SVPicker.Position = UDim2New(0, 5, 0, 25)
@@ -706,7 +605,6 @@ function Library:CreateWindow(config)
             SVCursor.BorderSizePixel = 1
             SVCursor.Parent = SVPicker
             
-            -- Hue Slider
             local HueSlider = InstanceNew("TextButton")
             HueSlider.Size = UDim2New(0, 15, 1, -50)
             HueSlider.Position = UDim2New(1, -18, 0, 25)
@@ -808,6 +706,84 @@ function Library:CreateWindow(config)
             end)
             
             return Colorpicker
+        end
+        
+        function Tab:CreateTextbox(config)
+            config = config or {}
+            
+            local TextboxFrame = InstanceNew("Frame")
+            TextboxFrame.Size = UDim2New(1, -8, 0, 38)
+            TextboxFrame.BackgroundColor3 = FromRGB(22, 22, 27)
+            TextboxFrame.BorderColor3 = FromRGB(35, 35, 40)
+            TextboxFrame.BorderSizePixel = 1
+            TextboxFrame.Parent = TabContent
+            
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -10, 0, 15)
+            Label.Position = UDim2New(0, 5, 0, 3)
+            Label.BackgroundTransparency = 1
+            Label.Text = config.Name or "Textbox"
+            Label.TextColor3 = FromRGB(200, 200, 200)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = TextboxFrame
+            
+            local Textbox = InstanceNew("TextBox")
+            Textbox.Size = UDim2New(1, -10, 0, 16)
+            Textbox.Position = UDim2New(0, 5, 0, 18)
+            Textbox.BackgroundColor3 = FromRGB(15, 15, 20)
+            Textbox.BorderColor3 = FromRGB(30, 30, 35)
+            Textbox.BorderSizePixel = 1
+            Textbox.Text = ""
+            Textbox.PlaceholderText = config.Placeholder or ""
+            Textbox.TextColor3 = FromRGB(200, 200, 200)
+            Textbox.PlaceholderColor3 = FromRGB(100, 100, 105)
+            Textbox.TextSize = 11
+            Textbox.Font = Enum.Font.SourceSans
+            Textbox.TextXAlignment = Enum.TextXAlignment.Left
+            Textbox.ClearTextOnFocus = false
+            Textbox.Parent = TextboxFrame
+            
+            local TextboxPadding = InstanceNew("UIPadding")
+            TextboxPadding.PaddingLeft = UDimNew(0, 3)
+            TextboxPadding.Parent = Textbox
+            
+            if config.Flag then
+                Library.Flags[config.Flag] = ""
+            end
+            
+            Library:Connect(Textbox.FocusLost, function(enter)
+                if enter then
+                    if config.Flag then
+                        Library.Flags[config.Flag] = Textbox.Text
+                    end
+                    
+                    if config.Callback then
+                        config.Callback(Textbox.Text)
+                    end
+                end
+            end)
+            
+            return TextboxFrame
+        end
+        
+        function Tab:CreateLabel(text)
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -8, 0, 18)
+            Label.BackgroundTransparency = 1
+            Label.Text = text or "Label"
+            Label.TextColor3 = FromRGB(180, 180, 180)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = TabContent
+            
+            local LabelPadding = InstanceNew("UIPadding")
+            LabelPadding.PaddingLeft = UDimNew(0, 5)
+            LabelPadding.Parent = Label
+            
+            return Label
         end
         
         return Tab
