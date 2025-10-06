@@ -461,6 +461,355 @@ function Library:CreateWindow(config)
             return Label
         end
         
+        function Tab:CreateDropdown(config)
+            config = config or {}
+            local options = config.Options or {"Option 1", "Option 2", "Option 3"}
+            local default = config.Default or options[1]
+            
+            local Dropdown = {
+                Options = options,
+                Value = default,
+                IsOpen = false
+            }
+            
+            local DropdownFrame = InstanceNew("Frame")
+            DropdownFrame.Size = UDim2New(1, -8, 0, 38)
+            DropdownFrame.BackgroundColor3 = FromRGB(22, 22, 27)
+            DropdownFrame.BorderColor3 = FromRGB(35, 35, 40)
+            DropdownFrame.BorderSizePixel = 1
+            DropdownFrame.Parent = TabContent
+            DropdownFrame.ClipsDescendants = true
+            
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -10, 0, 15)
+            Label.Position = UDim2New(0, 5, 0, 3)
+            Label.BackgroundTransparency = 1
+            Label.Text = config.Name or "Dropdown"
+            Label.TextColor3 = FromRGB(200, 200, 200)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = DropdownFrame
+            
+            local DropdownButton = InstanceNew("TextButton")
+            DropdownButton.Size = UDim2New(1, -10, 0, 16)
+            DropdownButton.Position = UDim2New(0, 5, 0, 18)
+            DropdownButton.BackgroundColor3 = FromRGB(15, 15, 20)
+            DropdownButton.BorderColor3 = FromRGB(30, 30, 35)
+            DropdownButton.BorderSizePixel = 1
+            DropdownButton.Text = "  " .. default
+            DropdownButton.TextColor3 = FromRGB(200, 200, 200)
+            DropdownButton.TextSize = 11
+            DropdownButton.Font = Enum.Font.SourceSans
+            DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+            DropdownButton.AutoButtonColor = false
+            DropdownButton.Parent = DropdownFrame
+            
+            local Arrow = InstanceNew("TextLabel")
+            Arrow.Size = UDim2New(0, 15, 1, 0)
+            Arrow.Position = UDim2New(1, -15, 0, 0)
+            Arrow.BackgroundTransparency = 1
+            Arrow.Text = "▼"
+            Arrow.TextColor3 = FromRGB(150, 150, 150)
+            Arrow.TextSize = 10
+            Arrow.Font = Enum.Font.SourceSans
+            Arrow.Parent = DropdownButton
+            
+            local OptionsList = InstanceNew("Frame")
+            OptionsList.Size = UDim2New(1, -10, 0, 0)
+            OptionsList.Position = UDim2New(0, 5, 0, 36)
+            OptionsList.BackgroundColor3 = FromRGB(18, 18, 23)
+            OptionsList.BorderColor3 = FromRGB(30, 30, 35)
+            OptionsList.BorderSizePixel = 1
+            OptionsList.Parent = DropdownFrame
+            
+            local OptionsLayout = InstanceNew("UIListLayout")
+            OptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            OptionsLayout.Parent = OptionsList
+            
+            if config.Flag then
+                Library.Flags[config.Flag] = default
+            end
+            
+            local function createOption(optionText)
+                local OptionButton = InstanceNew("TextButton")
+                OptionButton.Size = UDim2New(1, 0, 0, 18)
+                OptionButton.BackgroundColor3 = FromRGB(18, 18, 23)
+                OptionButton.BorderSizePixel = 0
+                OptionButton.Text = "  " .. optionText
+                OptionButton.TextColor3 = FromRGB(200, 200, 200)
+                OptionButton.TextSize = 11
+                OptionButton.Font = Enum.Font.SourceSans
+                OptionButton.TextXAlignment = Enum.TextXAlignment.Left
+                OptionButton.AutoButtonColor = false
+                OptionButton.Parent = OptionsList
+                
+                Library:Connect(OptionButton.MouseEnter, function()
+                    OptionButton.BackgroundColor3 = FromRGB(25, 25, 30)
+                end)
+                
+                Library:Connect(OptionButton.MouseLeave, function()
+                    OptionButton.BackgroundColor3 = FromRGB(18, 18, 23)
+                end)
+                
+                Library:Connect(OptionButton.MouseButton1Click, function()
+                    Dropdown.Value = optionText
+                    DropdownButton.Text = "  " .. optionText
+                    Dropdown.IsOpen = false
+                    
+                    DropdownFrame.Size = UDim2New(1, -8, 0, 38)
+                    OptionsList.Size = UDim2New(1, -10, 0, 0)
+                    
+                    if config.Flag then
+                        Library.Flags[config.Flag] = optionText
+                    end
+                    
+                    if config.Callback then
+                        config.Callback(optionText)
+                    end
+                end)
+            end
+            
+            for _, option in pairs(options) do
+                createOption(option)
+            end
+            
+            Library:Connect(DropdownButton.MouseButton1Click, function()
+                Dropdown.IsOpen = not Dropdown.IsOpen
+                
+                if Dropdown.IsOpen then
+                    local optionCount = #options
+                    local totalHeight = 38 + (optionCount * 18) + 2
+                    DropdownFrame.Size = UDim2New(1, -8, 0, totalHeight)
+                    OptionsList.Size = UDim2New(1, -10, 0, optionCount * 18)
+                else
+                    DropdownFrame.Size = UDim2New(1, -8, 0, 38)
+                    OptionsList.Size = UDim2New(1, -10, 0, 0)
+                end
+            end)
+            
+            return Dropdown
+        end
+        
+        function Tab:CreateColorpicker(config)
+            config = config or {}
+            local default = config.Default or FromRGB(255, 255, 255)
+            
+            local Colorpicker = {
+                Color = default,
+                Hue = 0,
+                Sat = 1,
+                Val = 1,
+                IsOpen = false
+            }
+            
+            -- Convert default color to HSV
+            local h, s, v = default:ToHSV()
+            Colorpicker.Hue = h
+            Colorpicker.Sat = s
+            Colorpicker.Val = v
+            
+            local ColorFrame = InstanceNew("Frame")
+            ColorFrame.Size = UDim2New(1, -8, 0, 20)
+            ColorFrame.BackgroundColor3 = FromRGB(22, 22, 27)
+            ColorFrame.BorderColor3 = FromRGB(35, 35, 40)
+            ColorFrame.BorderSizePixel = 1
+            ColorFrame.Parent = TabContent
+            
+            local Label = InstanceNew("TextLabel")
+            Label.Size = UDim2New(1, -30, 1, 0)
+            Label.Position = UDim2New(0, 5, 0, 0)
+            Label.BackgroundTransparency = 1
+            Label.Text = config.Name or "Color"
+            Label.TextColor3 = FromRGB(200, 200, 200)
+            Label.TextSize = 12
+            Label.Font = Enum.Font.SourceSans
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = ColorFrame
+            
+            local ColorButton = InstanceNew("TextButton")
+            ColorButton.Size = UDim2New(0, 16, 0, 12)
+            ColorButton.Position = UDim2New(1, -20, 0.5, -6)
+            ColorButton.BackgroundColor3 = default
+            ColorButton.BorderColor3 = FromRGB(35, 35, 40)
+            ColorButton.BorderSizePixel = 1
+            ColorButton.Text = ""
+            ColorButton.AutoButtonColor = false
+            ColorButton.Parent = ColorFrame
+            
+            -- Color Picker Window
+            local PickerWindow = InstanceNew("Frame")
+            PickerWindow.Size = UDim2New(0, 180, 0, 200)
+            PickerWindow.Position = UDim2New(0.5, -90, 0.5, -100)
+            PickerWindow.BackgroundColor3 = FromRGB(22, 22, 27)
+            PickerWindow.BorderColor3 = FromRGB(35, 35, 40)
+            PickerWindow.BorderSizePixel = 1
+            PickerWindow.Visible = false
+            PickerWindow.Parent = ScreenGui
+            PickerWindow.ZIndex = 100
+            
+            Library:MakeDraggable(PickerWindow, PickerWindow)
+            
+            local PickerTitle = InstanceNew("TextLabel")
+            PickerTitle.Size = UDim2New(1, -10, 0, 18)
+            PickerTitle.Position = UDim2New(0, 5, 0, 3)
+            PickerTitle.BackgroundTransparency = 1
+            PickerTitle.Text = config.Name or "Color Picker"
+            PickerTitle.TextColor3 = FromRGB(200, 200, 200)
+            PickerTitle.TextSize = 12
+            PickerTitle.Font = Enum.Font.SourceSansBold
+            PickerTitle.TextXAlignment = Enum.TextXAlignment.Left
+            PickerTitle.Parent = PickerWindow
+            
+            -- Saturation/Value Picker
+            local SVPicker = InstanceNew("TextButton")
+            SVPicker.Size = UDim2New(1, -30, 1, -50)
+            SVPicker.Position = UDim2New(0, 5, 0, 25)
+            SVPicker.BackgroundColor3 = FromRGB(255, 0, 0)
+            SVPicker.BorderSizePixel = 0
+            SVPicker.Text = ""
+            SVPicker.AutoButtonColor = false
+            SVPicker.Parent = PickerWindow
+            
+            local WhiteGradient = InstanceNew("Frame")
+            WhiteGradient.Size = UDim2New(1, 0, 1, 0)
+            WhiteGradient.BackgroundColor3 = FromRGB(255, 255, 255)
+            WhiteGradient.BorderSizePixel = 0
+            WhiteGradient.Parent = SVPicker
+            
+            local WhiteGradientUI = InstanceNew("UIGradient")
+            WhiteGradientUI.Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0),
+                NumberSequenceKeypoint.new(1, 1)
+            }
+            WhiteGradientUI.Parent = WhiteGradient
+            
+            local BlackGradient = InstanceNew("Frame")
+            BlackGradient.Size = UDim2New(1, 0, 1, 0)
+            BlackGradient.BackgroundColor3 = FromRGB(0, 0, 0)
+            BlackGradient.BorderSizePixel = 0
+            BlackGradient.Parent = SVPicker
+            
+            local BlackGradientUI = InstanceNew("UIGradient")
+            BlackGradientUI.Rotation = 90
+            BlackGradientUI.Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(1, 0)
+            }
+            BlackGradientUI.Parent = BlackGradient
+            
+            local SVCursor = InstanceNew("Frame")
+            SVCursor.Size = UDim2New(0, 4, 0, 4)
+            SVCursor.Position = UDim2New(Colorpicker.Sat, -2, 1 - Colorpicker.Val, -2)
+            SVCursor.BackgroundColor3 = FromRGB(255, 255, 255)
+            SVCursor.BorderColor3 = FromRGB(0, 0, 0)
+            SVCursor.BorderSizePixel = 1
+            SVCursor.Parent = SVPicker
+            
+            -- Hue Slider
+            local HueSlider = InstanceNew("TextButton")
+            HueSlider.Size = UDim2New(0, 15, 1, -50)
+            HueSlider.Position = UDim2New(1, -18, 0, 25)
+            HueSlider.BackgroundColor3 = FromRGB(255, 255, 255)
+            HueSlider.BorderSizePixel = 0
+            HueSlider.Text = ""
+            HueSlider.AutoButtonColor = false
+            HueSlider.Parent = PickerWindow
+            
+            local HueGradient = InstanceNew("UIGradient")
+            HueGradient.Rotation = 90
+            HueGradient.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, FromRGB(255, 0, 0)),
+                ColorSequenceKeypoint.new(0.17, FromRGB(255, 255, 0)),
+                ColorSequenceKeypoint.new(0.33, FromRGB(0, 255, 0)),
+                ColorSequenceKeypoint.new(0.5, FromRGB(0, 255, 255)),
+                ColorSequenceKeypoint.new(0.67, FromRGB(0, 0, 255)),
+                ColorSequenceKeypoint.new(0.83, FromRGB(255, 0, 255)),
+                ColorSequenceKeypoint.new(1, FromRGB(255, 0, 0))
+            }
+            HueGradient.Parent = HueSlider
+            
+            local HueCursor = InstanceNew("Frame")
+            HueCursor.Size = UDim2New(1, 0, 0, 2)
+            HueCursor.Position = UDim2New(0, 0, Colorpicker.Hue, -1)
+            HueCursor.BackgroundColor3 = FromRGB(255, 255, 255)
+            HueCursor.BorderColor3 = FromRGB(0, 0, 0)
+            HueCursor.BorderSizePixel = 1
+            HueCursor.Parent = HueSlider
+            
+            if config.Flag then
+                Library.Flags[config.Flag] = default
+            end
+            
+            local function updateColor()
+                Colorpicker.Color = Color3.fromHSV(Colorpicker.Hue, Colorpicker.Sat, Colorpicker.Val)
+                ColorButton.BackgroundColor3 = Colorpicker.Color
+                SVPicker.BackgroundColor3 = Color3.fromHSV(Colorpicker.Hue, 1, 1)
+                
+                if config.Flag then
+                    Library.Flags[config.Flag] = Colorpicker.Color
+                end
+                
+                if config.Callback then
+                    config.Callback(Colorpicker.Color)
+                end
+            end
+            
+            local draggingSV = false
+            local draggingHue = false
+            
+            Library:Connect(SVPicker.InputBegan, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    draggingSV = true
+                    local pos = input.Position
+                    Colorpicker.Sat = math.clamp((pos.X - SVPicker.AbsolutePosition.X) / SVPicker.AbsoluteSize.X, 0, 1)
+                    Colorpicker.Val = 1 - math.clamp((pos.Y - SVPicker.AbsolutePosition.Y) / SVPicker.AbsoluteSize.Y, 0, 1)
+                    SVCursor.Position = UDim2New(Colorpicker.Sat, -2, 1 - Colorpicker.Val, -2)
+                    updateColor()
+                end
+            end)
+            
+            Library:Connect(HueSlider.InputBegan, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    draggingHue = true
+                    local pos = input.Position
+                    Colorpicker.Hue = math.clamp((pos.Y - HueSlider.AbsolutePosition.Y) / HueSlider.AbsoluteSize.Y, 0, 1)
+                    HueCursor.Position = UDim2New(0, 0, Colorpicker.Hue, -1)
+                    updateColor()
+                end
+            end)
+            
+            Library:Connect(UserInputService.InputChanged, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement then
+                    if draggingSV then
+                        local pos = input.Position
+                        Colorpicker.Sat = math.clamp((pos.X - SVPicker.AbsolutePosition.X) / SVPicker.AbsoluteSize.X, 0, 1)
+                        Colorpicker.Val = 1 - math.clamp((pos.Y - SVPicker.AbsolutePosition.Y) / SVPicker.AbsoluteSize.Y, 0, 1)
+                        SVCursor.Position = UDim2New(Colorpicker.Sat, -2, 1 - Colorpicker.Val, -2)
+                        updateColor()
+                    elseif draggingHue then
+                        local pos = input.Position
+                        Colorpicker.Hue = math.clamp((pos.Y - HueSlider.AbsolutePosition.Y) / HueSlider.AbsoluteSize.Y, 0, 1)
+                        HueCursor.Position = UDim2New(0, 0, Colorpicker.Hue, -1)
+                        updateColor()
+                    end
+                end
+            end)
+            
+            Library:Connect(UserInputService.InputEnded, function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    draggingSV = false
+                    draggingHue = false
+                end
+            end)
+            
+            Library:Connect(ColorButton.MouseButton1Click, function()
+                PickerWindow.Visible = not PickerWindow.Visible
+            end)
+            
+            return Colorpicker
+        end
+        
         return Tab
     end
     
