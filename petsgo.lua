@@ -1395,10 +1395,12 @@ local Library do
         end
 
         function PlayerList:CreatePlayerEntry(player)
+            local IsExpanded = false
+            
             local PlayerEntry = Instances:Create("Frame", {
                 Parent = Items["PlayerScroll"].Instance,
                 Name = player.Name,
-                Size = UDim2New(1, -5, 0, 70),
+                Size = UDim2New(1, -5, 0, 25),
                 BorderColor3 = FromRGB(10, 10, 10),
                 BorderSizePixel = 2,
                 BackgroundColor3 = FromRGB(30, 30, 35)
@@ -1597,6 +1599,108 @@ local Library do
                     end
                 else
                     Library:Notification("Cannot teleport - " .. player.Name .. " character not found", 3, FromRGB(240, 71, 71))
+                end
+            end)
+            
+            -- Info Container (Health, Distance, etc)
+            local InfoContainer = Instances:Create("Frame", {
+                Parent = PlayerEntry.Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                Position = UDim2New(0, 5, 0, 70),
+                Size = UDim2New(1, -10, 0, 40),
+                BorderSizePixel = 0,
+                Visible = false
+            })
+            
+            local HealthLabel = Instances:Create("TextLabel", {
+                Parent = InfoContainer.Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(180, 180, 180),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = "Health: 100/100",
+                Name = "\0",
+                Size = UDim2New(1, 0, 0, 13),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Position = UDim2New(0, 0, 0, 0),
+                BorderSizePixel = 0,
+                TextSize = 11,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  HealthLabel:AddToTheme({TextColor3 = "Text"})
+            
+            Instances:Create("UIStroke", {
+                Parent = HealthLabel.Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            local DistanceLabel = Instances:Create("TextLabel", {
+                Parent = InfoContainer.Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(180, 180, 180),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = "Distance: N/A",
+                Name = "\0",
+                Size = UDim2New(1, 0, 0, 13),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Position = UDim2New(0, 0, 0, 15),
+                BorderSizePixel = 0,
+                TextSize = 11,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  DistanceLabel:AddToTheme({TextColor3 = "Text"})
+            
+            Instances:Create("UIStroke", {
+                Parent = DistanceLabel.Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            -- Make buttons initially hidden
+            ButtonContainer.Instance.Visible = false
+            
+            -- Click to expand/collapse
+            local ClickButton = Instances:Create("TextButton", {
+                Parent = PlayerEntry.Instance,
+                Name = "\0",
+                Size = UDim2New(1, 0, 0, 25),
+                BackgroundTransparency = 1,
+                Text = "",
+                AutoButtonColor = false
+            })
+            
+            ClickButton:Connect("MouseButton1Click", function()
+                IsExpanded = not IsExpanded
+                
+                if IsExpanded then
+                    PlayerEntry:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2New(1, -5, 0, 115)})
+                    ButtonContainer.Instance.Visible = true
+                    InfoContainer.Instance.Visible = true
+                else
+                    PlayerEntry:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2New(1, -5, 0, 25)})
+                    ButtonContainer.Instance.Visible = false
+                    InfoContainer.Instance.Visible = false
+                end
+            end)
+            
+            -- Update health and distance
+            Library:Thread(function()
+                while player and player.Parent do
+                    if player.Character then
+                        local humanoid = player.Character:FindFirstChild("Humanoid")
+                        if humanoid then
+                            local health = math.floor(humanoid.Health)
+                            local maxHealth = math.floor(humanoid.MaxHealth)
+                            HealthLabel.Instance.Text = StringFormat("Health: %d/%d", health, maxHealth)
+                        end
+                        
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("HumanoidRootPart") then
+                            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                            DistanceLabel.Instance.Text = StringFormat("Distance: %d studs", math.floor(distance))
+                        end
+                    end
+                    task.wait(0.5)
                 end
             end)
             
