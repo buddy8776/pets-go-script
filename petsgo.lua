@@ -144,8 +144,7 @@ if getgenv().Library then
     getgenv().Library:Unload()
 end
 
-local Library = {}
-do
+local Library do
     local UserInputService = game:GetService("UserInputService")
     local Players = game:GetService("Players")
     local Workspace = game:GetService("Workspace")
@@ -1859,18 +1858,17 @@ do
         return PlayerList
     end
 
-    Library.ESPPreview = function(self, ESPSettings)
+    Library.ESPPreview = function(self)
         local ESPPreview = {}
-        local RunService = game:GetService("RunService")
         
         local Items = {} do
-            -- ESP Preview Window
+            -- Simple window like your image
             Items["PreviewFrame"] = Instances:Create("Frame", {
                 Parent = Library.Holder.Instance,
                 BorderColor3 = FromRGB(10, 10, 10),
                 Name = "\0",
                 Position = UDim2New(0, 50, 0, 50),
-                Size = UDim2New(0, 250, 0, 350),
+                Size = UDim2New(0, 200, 0, 200),
                 BorderSizePixel = 2,
                 BackgroundColor3 = FromRGB(15, 15, 20)
             })  Items["PreviewFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
@@ -1885,22 +1883,35 @@ do
                 Color = FromRGB(27, 27, 32)
             }):AddToTheme({Color = "Outline"})
             
-            -- Title
+            -- Title "Players"
             Items["Title"] = Instances:Create("TextLabel", {
                 Parent = Items["PreviewFrame"].Instance,
                 FontFace = Library.Font,
                 TextColor3 = FromRGB(215, 215, 215),
                 BorderColor3 = FromRGB(0, 0, 0),
-                Text = "ESP Preview",
+                Text = "Players",
                 Name = "\0",
                 Size = UDim2New(1, 0, 0, 15),
                 BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Left,
                 Position = UDim2New(0, 5, 0, 2),
                 BorderSizePixel = 0,
                 TextSize = 11,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
             
+            Instances:Create("UIStroke", {
+                Parent = Items["Title"].Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            -- Preview Container (where the ESP box will be)
+            Items["PreviewContainer"] = Instances:Create("Frame", {
+                Parent = Items["PreviewFrame"].Instance,
+                Name = "\0",
+                Position = UDim2New(0, 0, 0, 25),
+                Size = UDim2New(1, 0, 1, -25),
                 BackgroundColor3 = FromRGB(20, 20, 25),
                 BorderSizePixel = 0
             })  Items["PreviewContainer"]:AddToTheme({BackgroundColor3 = "Page Background"})
