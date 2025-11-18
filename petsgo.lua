@@ -1279,6 +1279,369 @@ local Library do
         return KeybindList
     end
 
+    Library.PlayerList = function(self)
+        local PlayerList = {}
+        local PlayerStatuses = {}
+
+        local Items = {} do
+            Items["PlayerListFrame"] = Instances:Create("Frame", {
+                Parent = Library.Holder.Instance,
+                BorderColor3 = FromRGB(10, 10, 10),
+                AnchorPoint = Vector2New(1, 0.5),
+                Name = "\0",
+                Position = UDim2New(1, -15, 0.5, 0),
+                Size = UDim2New(0, 250, 0, 400),
+                BorderSizePixel = 2,
+                BackgroundColor3 = FromRGB(15, 15, 20)
+            })  Items["PlayerListFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
+
+            Items["PlayerListFrame"]:MakeDraggable()
+            
+            Instances:Create("UIStroke", {
+                Parent = Items["PlayerListFrame"].Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            Items["AccentLine"] = Instances:Create("Frame", {
+                Parent = Items["PlayerListFrame"].Instance,
+                Name = "\0",
+                Position = UDim2New(0, -5, 0, -5),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Size = UDim2New(1, 10, 0, 2),
+                BorderSizePixel = 0,
+                BackgroundColor3 = FromRGB(235, 157, 255)
+            })  Items["AccentLine"]:AddToTheme({BackgroundColor3 = "Accent"})
+            
+            Instances:Create("UIGradient", {
+                Parent = Items["AccentLine"].Instance,
+                Rotation = 90,
+                Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, FromRGB(65, 65, 65))}
+            }) 
+            
+            Instances:Create("UIPadding", {
+                Parent = Items["PlayerListFrame"].Instance,
+                PaddingTop = UDimNew(0, 5),
+                PaddingBottom = UDimNew(0, 5),
+                PaddingRight = UDimNew(0, 5),
+                PaddingLeft = UDimNew(0, 5)
+            }) 
+            
+            Items["Title"] = Instances:Create("TextLabel", {
+                Parent = Items["PlayerListFrame"].Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(215, 215, 215),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = "Players",
+                Name = "\0",
+                Size = UDim2New(0, 100, 0, 15),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Position = UDim2New(0, 0, 0, -1),
+                BorderSizePixel = 0,
+                TextSize = 12,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
+            
+            Instances:Create("UIStroke", {
+                Parent = Items["Title"].Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            Items["PlayerCount"] = Instances:Create("TextLabel", {
+                Parent = Items["PlayerListFrame"].Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(180, 180, 180),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = "0",
+                Name = "\0",
+                Size = UDim2New(0, 50, 0, 15),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                Position = UDim2New(1, -50, 0, -1),
+                BorderSizePixel = 0,
+                TextSize = 12,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  Items["PlayerCount"]:AddToTheme({TextColor3 = "Text"})
+            
+            Instances:Create("UIStroke", {
+                Parent = Items["PlayerCount"].Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            Items["PlayerScroll"] = Instances:Create("ScrollingFrame", {
+                Parent = Items["PlayerListFrame"].Instance,
+                ScrollBarImageColor3 = FromRGB(235, 157, 255),
+                Active = true,
+                AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                ScrollBarThickness = 2,
+                Size = UDim2New(1, 0, 1, -20),
+                Name = "\0",
+                Position = UDim2New(0, 0, 0, 19),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                CanvasSize = UDim2New(0, 0, 0, 0)
+            })  Items["PlayerScroll"]:AddToTheme({ScrollBarImageColor3 = "Accent"})
+            
+            Instances:Create("UIListLayout", {
+                Parent = Items["PlayerScroll"].Instance,
+                Padding = UDimNew(0, 5),
+                SortOrder = Enum.SortOrder.Name
+            })
+        end
+
+        function PlayerList:CreatePlayerEntry(player)
+            local PlayerEntry = Instances:Create("Frame", {
+                Parent = Items["PlayerScroll"].Instance,
+                Name = player.Name,
+                Size = UDim2New(1, -5, 0, 70),
+                BorderColor3 = FromRGB(10, 10, 10),
+                BorderSizePixel = 2,
+                BackgroundColor3 = FromRGB(30, 30, 35)
+            })  PlayerEntry:AddToTheme({BackgroundColor3 = "Page Background", BorderColor3 = "Border"})
+            
+            Instances:Create("UIStroke", {
+                Parent = PlayerEntry.Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            local PlayerName = Instances:Create("TextLabel", {
+                Parent = PlayerEntry.Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(215, 215, 215),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = player.Name,
+                Name = "\0",
+                Size = UDim2New(1, -10, 0, 15),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd,
+                Position = UDim2New(0, 5, 0, 3),
+                BorderSizePixel = 0,
+                TextSize = 12,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  PlayerName:AddToTheme({TextColor3 = "Text"})
+            
+            Instances:Create("UIStroke", {
+                Parent = PlayerName.Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            local StatusIndicator = Instances:Create("Frame", {
+                Parent = PlayerEntry.Instance,
+                Name = "\0",
+                Position = UDim2New(1, -10, 0, 8),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Size = UDim2New(0, 6, 0, 6),
+                BorderSizePixel = 0,
+                BackgroundColor3 = FromRGB(100, 100, 100)
+            })
+            
+            Instances:Create("UICorner", {
+                Parent = StatusIndicator.Instance,
+                CornerRadius = UDimNew(1, 0)
+            })
+            
+            local ButtonContainer = Instances:Create("Frame", {
+                Parent = PlayerEntry.Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                Position = UDim2New(0, 5, 0, 25),
+                Size = UDim2New(1, -10, 0, 40),
+                BorderSizePixel = 0
+            })
+            
+            Instances:Create("UIListLayout", {
+                Parent = ButtonContainer.Instance,
+                FillDirection = Enum.FillDirection.Horizontal,
+                Padding = UDimNew(0, 5),
+                HorizontalAlignment = Enum.HorizontalAlignment.Left
+            })
+            
+            -- Friend Button
+            local FriendButton = Instances:Create("TextButton", {
+                Parent = ButtonContainer.Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(215, 215, 215),
+                BorderColor3 = FromRGB(10, 10, 10),
+                Text = "Friend",
+                AutoButtonColor = false,
+                Name = "\0",
+                Size = UDim2New(0, 70, 0, 18),
+                BorderSizePixel = 2,
+                TextSize = 11,
+                BackgroundColor3 = FromRGB(67, 181, 129)
+            })  FriendButton:AddToTheme({BorderColor3 = "Border"})
+            
+            Instances:Create("UIStroke", {
+                Parent = FriendButton.Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            Instances:Create("UIStroke", {
+                Parent = FriendButton.Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            FriendButton:OnHover(function()
+                FriendButton:Tween(nil, {BackgroundColor3 = FromRGB(77, 201, 149)})
+            end)
+            
+            FriendButton:OnHoverLeave(function()
+                FriendButton:Tween(nil, {BackgroundColor3 = FromRGB(67, 181, 129)})
+            end)
+            
+            FriendButton:Connect("MouseButton1Click", function()
+                PlayerStatuses[player.Name] = "Friend"
+                StatusIndicator:Tween(nil, {BackgroundColor3 = FromRGB(67, 181, 129)})
+                Library:Notification("Marked " .. player.Name .. " as Friend", 3, FromRGB(67, 181, 129))
+            end)
+            
+            -- Enemy Button
+            local EnemyButton = Instances:Create("TextButton", {
+                Parent = ButtonContainer.Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(215, 215, 215),
+                BorderColor3 = FromRGB(10, 10, 10),
+                Text = "Enemy",
+                AutoButtonColor = false,
+                Name = "\0",
+                Size = UDim2New(0, 70, 0, 18),
+                BorderSizePixel = 2,
+                TextSize = 11,
+                BackgroundColor3 = FromRGB(240, 71, 71)
+            })  EnemyButton:AddToTheme({BorderColor3 = "Border"})
+            
+            Instances:Create("UIStroke", {
+                Parent = EnemyButton.Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            Instances:Create("UIStroke", {
+                Parent = EnemyButton.Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            EnemyButton:OnHover(function()
+                EnemyButton:Tween(nil, {BackgroundColor3 = FromRGB(255, 91, 91)})
+            end)
+            
+            EnemyButton:OnHoverLeave(function()
+                EnemyButton:Tween(nil, {BackgroundColor3 = FromRGB(240, 71, 71)})
+            end)
+            
+            EnemyButton:Connect("MouseButton1Click", function()
+                PlayerStatuses[player.Name] = "Enemy"
+                StatusIndicator:Tween(nil, {BackgroundColor3 = FromRGB(240, 71, 71)})
+                Library:Notification("Marked " .. player.Name .. " as Enemy", 3, FromRGB(240, 71, 71))
+            end)
+            
+            -- Teleport Button
+            local TeleportButton = Instances:Create("TextButton", {
+                Parent = ButtonContainer.Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(215, 215, 215),
+                BorderColor3 = FromRGB(10, 10, 10),
+                Text = "Teleport",
+                AutoButtonColor = false,
+                Name = "\0",
+                Size = UDim2New(0, 70, 0, 18),
+                BorderSizePixel = 2,
+                TextSize = 11,
+                BackgroundColor3 = FromRGB(88, 101, 242)
+            })  TeleportButton:AddToTheme({BackgroundColor3 = "Accent", BorderColor3 = "Border"})
+            
+            Instances:Create("UIStroke", {
+                Parent = TeleportButton.Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            Instances:Create("UIStroke", {
+                Parent = TeleportButton.Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
+            TeleportButton:OnHover(function()
+                TeleportButton:Tween(nil, {BackgroundColor3 = FromRGB(108, 121, 255)})
+            end)
+            
+            TeleportButton:OnHoverLeave(function()
+                TeleportButton:Tween(nil, {BackgroundColor3 = Library.Theme.Accent})
+            end)
+            
+            TeleportButton:Connect("MouseButton1Click", function()
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
+                        Library:Notification("Teleported to " .. player.Name, 3, FromRGB(88, 101, 242))
+                    end
+                else
+                    Library:Notification("Cannot teleport - " .. player.Name .. " character not found", 3, FromRGB(240, 71, 71))
+                end
+            end)
+            
+            return PlayerEntry
+        end
+
+        function PlayerList:UpdatePlayerList()
+            for _, child in pairs(Items["PlayerScroll"].Instance:GetChildren()) do
+                if child:IsA("Frame") then
+                    child:Destroy()
+                end
+            end
+            
+            local playerCount = 0
+            for _, player in pairs(Players:GetPlayers()) do
+                PlayerList:CreatePlayerEntry(player)
+                playerCount = playerCount + 1
+            end
+            
+            Items["PlayerCount"].Instance.Text = tostring(playerCount)
+        end
+
+        function PlayerList:SetVisibility(Bool)
+            Items["PlayerListFrame"].Instance.Visible = Bool
+        end
+        
+        function PlayerList:GetPlayerStatus(playerName)
+            return PlayerStatuses[playerName]
+        end
+
+        PlayerList:UpdatePlayerList()
+        
+        Players.PlayerAdded:Connect(function(player)
+            task.wait(0.1)
+            PlayerList:UpdatePlayerList()
+        end)
+        
+        Players.PlayerRemoving:Connect(function(player)
+            PlayerStatuses[player.Name] = nil
+            PlayerList:UpdatePlayerList()
+        end)
+
+        return PlayerList
+    end
+
     Library.CreateColorpicker = function(self, Data)
         local Colorpicker = {
             Hue = 0,
