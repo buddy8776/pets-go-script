@@ -144,7 +144,8 @@ if getgenv().Library then
     getgenv().Library:Unload()
 end
 
-local Library do
+local Library = {}
+do
     local UserInputService = game:GetService("UserInputService")
     local Players = game:GetService("Players")
     local Workspace = game:GetService("Workspace")
@@ -1373,15 +1374,59 @@ local Library do
                 Name = "\0"
             }):AddToTheme({Color = "Text Border"})
             
+            -- Search Bar
+            Items["SearchBar"] = Instances:Create("Frame", {
+                Parent = Items["PlayerListFrame"].Instance,
+                Name = "\0",
+                Position = UDim2New(0, 0, 0, 19),
+                BorderColor3 = FromRGB(10, 10, 10),
+                Size = UDim2New(1, 0, 0, 22),
+                BorderSizePixel = 2,
+                BackgroundColor3 = FromRGB(33, 33, 36)
+            })  Items["SearchBar"]:AddToTheme({BackgroundColor3 = "Element", BorderColor3 = "Border"})
+            
+            Instances:Create("UIStroke", {
+                Parent = Items["SearchBar"].Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            Items["SearchBox"] = Instances:Create("TextBox", {
+                Parent = Items["SearchBar"].Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(215, 215, 215),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = "",
+                Name = "\0",
+                Size = UDim2New(1, -10, 1, 0),
+                Position = UDim2New(0, 5, 0, 0),
+                BorderSizePixel = 0,
+                ClearTextOnFocus = false,
+                BackgroundTransparency = 1,
+                PlaceholderColor3 = FromRGB(150, 150, 150),
+                TextXAlignment = Enum.TextXAlignment.Left,
+                PlaceholderText = "Search players...",
+                TextSize = 11,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  Items["SearchBox"]:AddToTheme({TextColor3 = "Text"})
+            
+            Instances:Create("UIStroke", {
+                Parent = Items["SearchBox"].Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
             Items["PlayerScroll"] = Instances:Create("ScrollingFrame", {
                 Parent = Items["PlayerListFrame"].Instance,
                 ScrollBarImageColor3 = FromRGB(235, 157, 255),
                 Active = true,
                 AutomaticCanvasSize = Enum.AutomaticSize.Y,
                 ScrollBarThickness = 2,
-                Size = UDim2New(1, 0, 1, -20),
+                Size = UDim2New(1, 0, 1, -46),
                 Name = "\0",
-                Position = UDim2New(0, 0, 0, 19),
+                Position = UDim2New(0, 0, 0, 45),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 CanvasSize = UDim2New(0, 0, 0, 0)
@@ -1414,6 +1459,54 @@ local Library do
                 Color = FromRGB(27, 27, 32)
             }):AddToTheme({Color = "Outline"})
             
+            -- Avatar Icon
+            local AvatarIcon = Instances:Create("ImageLabel", {
+                Parent = PlayerEntry.Instance,
+                Name = "\0",
+                Position = UDim2New(0, 3, 0, 3),
+                Size = UDim2New(0, 18, 0, 18),
+                BackgroundColor3 = FromRGB(40, 40, 45),
+                BorderSizePixel = 0,
+                Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=48&h=48"
+            })  AvatarIcon:AddToTheme({BackgroundColor3 = "Border"})
+            
+            Instances:Create("UICorner", {
+                Parent = AvatarIcon.Instance,
+                CornerRadius = UDimNew(0, 4)
+            })
+            
+            Instances:Create("UIStroke", {
+                Parent = AvatarIcon.Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            -- Expand Arrow
+            local ExpandArrow = Instances:Create("TextLabel", {
+                Parent = PlayerEntry.Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(180, 180, 180),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = "▶",
+                Name = "\0",
+                Size = UDim2New(0, 10, 0, 15),
+                BackgroundTransparency = 1,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                Position = UDim2New(0, 24, 0, 3),
+                BorderSizePixel = 0,
+                TextSize = 8,
+                Rotation = 0,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  ExpandArrow:AddToTheme({TextColor3 = "Text"})
+            
+            Instances:Create("UIStroke", {
+                Parent = ExpandArrow.Instance,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0"
+            }):AddToTheme({Color = "Text Border"})
+            
             local PlayerName = Instances:Create("TextLabel", {
                 Parent = PlayerEntry.Instance,
                 FontFace = Library.Font,
@@ -1421,11 +1514,11 @@ local Library do
                 BorderColor3 = FromRGB(0, 0, 0),
                 Text = player.Name,
                 Name = "\0",
-                Size = UDim2New(1, -10, 0, 15),
+                Size = UDim2New(1, -50, 0, 15),
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextTruncate = Enum.TextTruncate.AtEnd,
-                Position = UDim2New(0, 5, 0, 3),
+                Position = UDim2New(0, 38, 0, 3),
                 BorderSizePixel = 0,
                 TextSize = 12,
                 BackgroundColor3 = FromRGB(255, 255, 255)
@@ -1670,15 +1763,26 @@ local Library do
                 AutoButtonColor = false
             })
             
+            -- Hover effect
+            ClickButton:OnHover(function()
+                PlayerEntry:Tween(nil, {BackgroundColor3 = FromRGB(35, 35, 40)})
+            end)
+            
+            ClickButton:OnHoverLeave(function()
+                PlayerEntry:Tween(nil, {BackgroundColor3 = Library.Theme["Page Background"]})
+            end)
+            
             ClickButton:Connect("MouseButton1Click", function()
                 IsExpanded = not IsExpanded
                 
                 if IsExpanded then
                     PlayerEntry:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2New(1, -5, 0, 115)})
+                    ExpandArrow:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = 90})
                     ButtonContainer.Instance.Visible = true
                     InfoContainer.Instance.Visible = true
                 else
                     PlayerEntry:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2New(1, -5, 0, 25)})
+                    ExpandArrow:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = 0})
                     ButtonContainer.Instance.Visible = false
                     InfoContainer.Instance.Visible = false
                 end
@@ -1714,10 +1818,14 @@ local Library do
                 end
             end
             
+            local searchText = Items["SearchBox"].Instance.Text:lower()
             local playerCount = 0
+            
             for _, player in pairs(Players:GetPlayers()) do
-                PlayerList:CreatePlayerEntry(player)
-                playerCount = playerCount + 1
+                if searchText == "" or player.Name:lower():find(searchText, 1, true) then
+                    PlayerList:CreatePlayerEntry(player)
+                    playerCount = playerCount + 1
+                end
             end
             
             Items["PlayerCount"].Instance.Text = tostring(playerCount)
@@ -1733,6 +1841,11 @@ local Library do
 
         PlayerList:UpdatePlayerList()
         
+        -- Search box functionality
+        Items["SearchBox"].Instance:GetPropertyChangedSignal("Text"):Connect(function()
+            PlayerList:UpdatePlayerList()
+        end)
+        
         Players.PlayerAdded:Connect(function(player)
             task.wait(0.1)
             PlayerList:UpdatePlayerList()
@@ -1744,6 +1857,338 @@ local Library do
         end)
 
         return PlayerList
+    end
+
+    Library.ESPPreview = function(self, ESPSettings)
+        local ESPPreview = {}
+        local RunService = game:GetService("RunService")
+        
+        local Items = {} do
+            -- ESP Preview Window
+            Items["PreviewFrame"] = Instances:Create("Frame", {
+                Parent = Library.Holder.Instance,
+                BorderColor3 = FromRGB(10, 10, 10),
+                Name = "\0",
+                Position = UDim2New(0, 50, 0, 50),
+                Size = UDim2New(0, 250, 0, 350),
+                BorderSizePixel = 2,
+                BackgroundColor3 = FromRGB(15, 15, 20)
+            })  Items["PreviewFrame"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Border"})
+            
+            Items["PreviewFrame"]:MakeDraggable()
+            
+            Instances:Create("UIStroke", {
+                Parent = Items["PreviewFrame"].Instance,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                LineJoinMode = Enum.LineJoinMode.Miter,
+                Name = "\0",
+                Color = FromRGB(27, 27, 32)
+            }):AddToTheme({Color = "Outline"})
+            
+            -- Title
+            Items["Title"] = Instances:Create("TextLabel", {
+                Parent = Items["PreviewFrame"].Instance,
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(215, 215, 215),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = "ESP Preview",
+                Name = "\0",
+                Size = UDim2New(1, 0, 0, 15),
+                BackgroundTransparency = 1,
+                Position = UDim2New(0, 5, 0, 2),
+                BorderSizePixel = 0,
+                TextSize = 11,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
+            
+                BackgroundColor3 = FromRGB(20, 20, 25),
+                BorderSizePixel = 0
+            })  Items["PreviewContainer"]:AddToTheme({BackgroundColor3 = "Page Background"})
+            
+            -- ViewportFrame for 3D character
+            Items["Viewport"] = Instances:Create("ViewportFrame", {
+                Parent = Items["PreviewContainer"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0.5),
+                Position = UDim2New(0.5, 0, 0.5, 0),
+                Size = UDim2New(0, 200, 0, 300),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0
+            })
+            
+            -- Create WorldModel for ViewportFrame
+            local WorldModel = Instance.new("WorldModel")
+            WorldModel.Parent = Items["Viewport"].Instance
+            
+            -- Create Camera for ViewportFrame
+            local Camera = Instance.new("Camera")
+            Camera.Parent = Items["Viewport"].Instance
+            Items["Viewport"].Instance.CurrentCamera = Camera
+            Camera.CFrame = CFrame.new(0, 2, 5) * CFrame.Angles(0, math.rad(180), 0)
+            
+            -- Create R15 Character Model
+            local DummyCharacter = Instance.new("Model")
+            DummyCharacter.Name = "DummyCharacter"
+            DummyCharacter.Parent = WorldModel
+            
+            -- Create HumanoidRootPart
+            local HRP = Instance.new("Part")
+            HRP.Name = "HumanoidRootPart"
+            HRP.Size = Vector3.new(1, 2, 1)
+            HRP.Transparency = 1
+            HRP.CanCollide = false
+            HRP.Anchored = true
+            HRP.CFrame = CFrame.new(0, 0, 0)
+            HRP.Parent = DummyCharacter
+            
+            -- Function to create body part
+            local function CreatePart(name, size, cframe, color)
+                local part = Instance.new("Part")
+                part.Name = name
+                part.Size = size
+                part.Color = color or Color3.fromRGB(163, 162, 165)
+                part.CanCollide = false
+                part.Anchored = true
+                part.CFrame = HRP.CFrame * cframe
+                part.Parent = DummyCharacter
+                return part
+            end
+            
+            -- Create R15 Body Parts
+            CreatePart("Head", Vector3.new(1, 1, 1), CFrame.new(0, 1.5, 0))
+            CreatePart("UpperTorso", Vector3.new(1, 1, 0.5), CFrame.new(0, 0.5, 0))
+            CreatePart("LowerTorso", Vector3.new(1, 1, 0.5), CFrame.new(0, -0.5, 0))
+            CreatePart("LeftUpperArm", Vector3.new(0.5, 0.8, 0.5), CFrame.new(-0.75, 0.7, 0))
+            CreatePart("LeftLowerArm", Vector3.new(0.5, 0.8, 0.5), CFrame.new(-0.75, -0.1, 0))
+            CreatePart("LeftHand", Vector3.new(0.5, 0.4, 0.5), CFrame.new(-0.75, -0.7, 0))
+            CreatePart("RightUpperArm", Vector3.new(0.5, 0.8, 0.5), CFrame.new(0.75, 0.7, 0))
+            CreatePart("RightLowerArm", Vector3.new(0.5, 0.8, 0.5), CFrame.new(0.75, -0.1, 0))
+            CreatePart("RightHand", Vector3.new(0.5, 0.4, 0.5), CFrame.new(0.75, -0.7, 0))
+            CreatePart("LeftUpperLeg", Vector3.new(0.5, 0.9, 0.5), CFrame.new(-0.25, -1.4, 0))
+            CreatePart("LeftLowerLeg", Vector3.new(0.5, 0.9, 0.5), CFrame.new(-0.25, -2.3, 0))
+            CreatePart("LeftFoot", Vector3.new(0.5, 0.4, 0.5), CFrame.new(-0.25, -2.9, 0))
+            CreatePart("RightUpperLeg", Vector3.new(0.5, 0.9, 0.5), CFrame.new(0.25, -1.4, 0))
+            CreatePart("RightLowerLeg", Vector3.new(0.5, 0.9, 0.5), CFrame.new(0.25, -2.3, 0))
+            CreatePart("RightFoot", Vector3.new(0.5, 0.4, 0.5), CFrame.new(0.25, -2.9, 0))
+            
+            -- ESP Box (center of preview)
+            Items["ESPBox"] = Instances:Create("Frame", {
+                Parent = Items["PreviewContainer"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0.5),
+                Position = UDim2New(0.5, 0, 0.5, 0),
+                Size = UDim2New(0, 80, 0, 120),
+                BackgroundTransparency = 1,
+                BorderColor3 = FromRGB(216, 126, 157),
+                BorderSizePixel = 0
+            })
+            
+            -- Player Silhouette (like image 2)
+            -- Head
+            Items["PlayerHead"] = Instances:Create("Frame", {
+                Parent = Items["ESPBox"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0),
+                Position = UDim2New(0.5, 0, 0, 0),
+                Size = UDim2New(0, 25, 0, 25),
+                BackgroundColor3 = FromRGB(120, 120, 120),
+                BorderSizePixel = 0
+            })
+            
+            Instances:Create("UICorner", {
+                Parent = Items["PlayerHead"].Instance,
+                CornerRadius = UDimNew(0, 3)
+            })
+            
+            -- Torso
+            Items["PlayerTorso"] = Instances:Create("Frame", {
+                Parent = Items["ESPBox"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0),
+                Position = UDim2New(0.5, 0, 0, 28),
+                Size = UDim2New(0, 30, 0, 35),
+                BackgroundColor3 = FromRGB(120, 120, 120),
+                BorderSizePixel = 0
+            })
+            
+            Instances:Create("UICorner", {
+                Parent = Items["PlayerTorso"].Instance,
+                CornerRadius = UDimNew(0, 2)
+            })
+            
+            -- Left Arm
+            Items["PlayerLeftArm"] = Instances:Create("Frame", {
+                Parent = Items["ESPBox"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(1, 0),
+                Position = UDim2New(0.5, -16, 0, 30),
+                Size = UDim2New(0, 10, 0, 30),
+                BackgroundColor3 = FromRGB(120, 120, 120),
+                BorderSizePixel = 0
+            })
+            
+            Instances:Create("UICorner", {
+                Parent = Items["PlayerLeftArm"].Instance,
+                CornerRadius = UDimNew(0, 2)
+            })
+            
+            -- Right Arm
+            Items["PlayerRightArm"] = Instances:Create("Frame", {
+                Parent = Items["ESPBox"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0, 0),
+                Position = UDim2New(0.5, 16, 0, 30),
+                Size = UDim2New(0, 10, 0, 30),
+                BackgroundColor3 = FromRGB(120, 120, 120),
+                BorderSizePixel = 0
+            })
+            
+            Instances:Create("UICorner", {
+                Parent = Items["PlayerRightArm"].Instance,
+                CornerRadius = UDimNew(0, 2)
+            })
+            
+            -- Left Leg
+            Items["PlayerLeftLeg"] = Instances:Create("Frame", {
+                Parent = Items["ESPBox"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0),
+                Position = UDim2New(0.5, -7, 0, 65),
+                Size = UDim2New(0, 12, 0, 35),
+                BackgroundColor3 = FromRGB(120, 120, 120),
+                BorderSizePixel = 0
+            })
+            
+            Instances:Create("UICorner", {
+                Parent = Items["PlayerLeftLeg"].Instance,
+                CornerRadius = UDimNew(0, 2)
+            })
+            
+            -- Right Leg
+            Items["PlayerRightLeg"] = Instances:Create("Frame", {
+                Parent = Items["ESPBox"].Instance,
+                Name = "\0",
+                AnchorPoint = Vector2New(0.5, 0),
+                Position = UDim2New(0.5, 7, 0, 65),
+                Size = UDim2New(0, 12, 0, 35),
+                BackgroundColor3 = FromRGB(120, 120, 120),
+                BorderSizePixel = 0
+            })
+            
+            Instances:Create("UICorner", {
+                Parent = Items["PlayerRightLeg"].Instance,
+                CornerRadius = UDimNew(0, 2)
+            })
+            
+            -- Create draggable ESP elements
+            function ESPPreview:CreateDraggableElement(name, defaultPos, text, color)
+                local Element = Instances:Create("TextLabel", {
+                    Parent = Items["ESPBox"].Instance,
+                    FontFace = Library.Font,
+                    TextColor3 = color or FromRGB(255, 255, 255),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    Text = text,
+                    Name = name,
+                    Size = UDim2New(0, 80, 0, 15),
+                    BackgroundColor3 = FromRGB(30, 30, 35),
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    Position = defaultPos,
+                    BorderSizePixel = 1,
+                    TextSize = 10,
+                    BackgroundTransparency = 0.3
+                })
+                
+                Instances:Create("UIStroke", {
+                    Parent = Element.Instance,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Name = "\0",
+                    Color = FromRGB(0, 0, 0)
+                })
+                
+                -- Make it draggable
+                local dragging = false
+                local dragStart = nil
+                local startPos = nil
+                
+                Element.Instance.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        dragging = true
+                        dragStart = input.Position
+                        startPos = Element.Instance.Position
+                    end
+                end)
+                
+                Element.Instance.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        dragging = false
+                    end
+                end)
+                
+                UserInputService.InputChanged:Connect(function(input)
+                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        local delta = input.Position - dragStart
+                        Element.Instance.Position = UDim2New(
+                            startPos.X.Scale,
+                            startPos.X.Offset + delta.X,
+                            startPos.Y.Scale,
+                            startPos.Y.Offset + delta.Y
+                        )
+                    end
+                end)
+                
+                DraggableElements[name] = Element
+                return Element
+            end
+            
+            -- Create ESP elements
+            ESPPreview:CreateDraggableElement("Name", UDim2New(0.5, -40, 0, -20), "PlayerName", FromRGB(255, 255, 255))
+            ESPPreview:CreateDraggableElement("Health", UDim2New(0, -50, 0.5, -7), "100 HP", FromRGB(131, 245, 78))
+            ESPPreview:CreateDraggableElement("Distance", UDim2New(0.5, -40, 1, 5), "50 st", FromRGB(255, 255, 255))
+            ESPPreview:CreateDraggableElement("Weapon", UDim2New(0.5, -40, 1, 25), "AK-47", FromRGB(255, 255, 255))
+            ESPPreview:CreateDraggableElement("Flags", UDim2New(1, 5, 0, 0), "moving", FromRGB(255, 255, 255))
+            
+            -- Health Bar (visual)
+            Items["HealthBar"] = Instances:Create("Frame", {
+                Parent = Items["ESPBox"].Instance,
+                Name = "HealthBar",
+                Position = UDim2New(0, -10, 0, 0),
+                Size = UDim2New(0, 3, 1, 0),
+                BackgroundColor3 = FromRGB(131, 245, 78),
+                BorderSizePixel = 0
+            })
+        end
+        
+        function ESPPreview:SetVisibility(Bool)
+            Items["PreviewFrame"].Instance.Visible = Bool
+        end
+        
+        function ESPPreview:GetElementPositions()
+            local positions = {}
+            for name, element in pairs(DraggableElements) do
+                positions[name] = element.Instance.Position
+            end
+            return positions
+        end
+        
+        function ESPPreview:ResetPositions()
+            if DraggableElements["Name"] then
+                DraggableElements["Name"].Instance.Position = UDim2New(0.5, -40, 0, -20)
+            end
+            if DraggableElements["Health"] then
+                DraggableElements["Health"].Instance.Position = UDim2New(0, -50, 0.5, -7)
+            end
+            if DraggableElements["Distance"] then
+                DraggableElements["Distance"].Instance.Position = UDim2New(0.5, -40, 1, 5)
+            end
+            if DraggableElements["Weapon"] then
+                DraggableElements["Weapon"].Instance.Position = UDim2New(0.5, -40, 1, 25)
+            end
+            if DraggableElements["Flags"] then
+                DraggableElements["Flags"].Instance.Position = UDim2New(1, 5, 0, 0)
+            end
+        end
+        
+        return ESPPreview
     end
 
     Library.CreateColorpicker = function(self, Data)
